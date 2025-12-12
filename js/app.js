@@ -13,55 +13,58 @@
   ========================================================= */
   const $ = (id) => document.getElementById(id);
 
-  /* =========================================================
-     AFSNIT 01 – DOM refs (matcher index.html)
-  ========================================================= */
-  const langSelect    = $("langSelect");
-  const typeSelect    = $("typeSelect");
-  const occasionWrap  = $("occasionWrap");
-  const occasionInput = $("occasionInput");
+ /* =========================================================
+   AFSNIT 01 – DOM refs (matcher index.html)
+========================================================= */
+const langSelect    = $("langSelect");
+const typeSelect    = $("typeSelect");
+const occasionWrap  = $("occasionWrap");
+const occasionInput = $("occasionInput");
 
-  const themeLight = $("themeLight");
-  const themeDark  = $("themeDark");
+const themeLight = $("themeLight");
+const themeDark  = $("themeDark");
 
-  const toStep2 = $("toStep2");
-  const toStep3 = $("toStep3");
+const toStep2 = $("toStep2");
+const toStep3 = $("toStep3");
 
-  const designStrip  = $("designStrip");
-  const designChosen = $("designChosen");
+const designStrip  = $("designStrip");
+const designChosen = $("designChosen");
 
-  const fromInput    = $("fromInput");
-  const toInput      = $("toInput");
-  const suggestSelect = $("suggestSelect");
-  const messageInput  = $("messageInput");
-  const charCount     = $("charCount");
+const fromInput    = $("fromInput");
+const toInput      = $("toInput");
+const suggestSelect = $("suggestSelect");
+const messageInput  = $("messageInput");
+const charCount     = $("charCount");
 
-  const previewBadge   = $("previewBadge");
-  const previewStamp   = $("previewStamp");
-  const previewTo      = $("previewTo");
-  const previewFrom    = $("previewFrom");
-  const previewMessage = $("previewMessage");
-  const cardPreview    = $("cardPreview");
-  const previewMode    = $("previewMode");
+const previewBadge   = $("previewBadge");
+const previewStamp   = $("previewStamp");
+const previewTo      = $("previewTo");
+const previewFrom    = $("previewFrom");
+const previewMessage = $("previewMessage");
+const cardPreview    = $("cardPreview");
+const previewMode    = $("previewMode");
 
-  const progressBar = $("progressBar");
-  const statusChip  = $("statusChip");
+const progressBar = $("progressBar");
+const statusChip  = $("statusChip");
 
-  const btnBack  = $("btnBack");
-  const btnPng   = $("btnPng");
-  const btnPdf   = $("btnPdf");
-  const btnMail  = $("btnMail");
-  const btnShare = $("btnShare");
+/* ✅ NYT: der kan være 1 eller flere noter i layoutet */
+const exportNotes = Array.from(document.querySelectorAll(".small-note"));
 
-  const btnRandom = $("btnRandom");
-  const btnReset  = $("btnReset");
+const btnBack  = $("btnBack");
+const btnPng   = $("btnPng");
+const btnPdf   = $("btnPdf");
+const btnMail  = $("btnMail");
+const btnShare = $("btnShare");
 
-  const btnHelp = $("btnHelp");
-  const helpModal = $("helpModal");
-  const btnCloseHelp = $("btnCloseHelp");
-  const helpList = $("helpList");
+const btnRandom = $("btnRandom");
+const btnReset  = $("btnReset");
 
-  const stepBlocks = Array.from(document.querySelectorAll(".card.block"));
+const btnHelp = $("btnHelp");
+const helpModal = $("helpModal");
+const btnCloseHelp = $("btnCloseHelp");
+const helpList = $("helpList");
+
+const stepBlocks = Array.from(document.querySelectorAll(".card.block"));
 
   /* =========================================================
      AFSNIT 02 – Data guard (HÅRD validering)
@@ -190,63 +193,77 @@
     typeSelect.value = state.type;
   }
 
-  /* =========================================================
-     AFSNIT 06 – Theme + UI tekster
-  ========================================================= */
-  function applyTheme(){
-    document.documentElement.setAttribute("data-theme", state.theme);
-    if(document.body) document.body.setAttribute("data-theme", state.theme);
+ /* =========================================================
+   AFSNIT 06 – Theme + UI tekster
+========================================================= */
+function applyTheme(){
+  document.documentElement.setAttribute("data-theme", state.theme);
+  if(document.body) document.body.setAttribute("data-theme", state.theme);
 
-    if(themeLight) themeLight.classList.toggle("active", state.theme === "light");
-    if(themeDark)  themeDark.classList.toggle("active",  state.theme === "dark");
-  }
+  if(themeLight) themeLight.classList.toggle("active", state.theme === "light");
+  if(themeDark)  themeDark.classList.toggle("active",  state.theme === "dark");
+}
 
-  function applyTexts(){
-    const L = t();
+function applyTexts(){
+  const L = t();
 
-    const setText = (id, txt) => {
-      const el = $(id);
-      if(el) el.textContent = (txt != null ? String(txt) : "");
+  const setText = (id, txt) => {
+    const el = $(id);
+    if(el) el.textContent = (txt != null ? String(txt) : "");
+  };
+
+  setText("subtitle",     L.subtitle || "");
+  setText("wizardTitle",  L.wizardTitle || "Opsætning");
+  setText("previewTitle", L.previewTitle || "Live preview");
+
+  setText("layer1Title",  L.layer1Title || "Lag 1");
+  setText("layer2Title",  L.layer2Title || "Lag 2");
+  setText("layer3Title",  L.layer3Title || "Lag 3");
+
+  setText("lblLang",        L.lang || "Sprog");
+  setText("lblTheme",       L.theme || "Tema");
+  setText("lblType",        L.type || "Korttype");
+  setText("lblOccasion",    L.occasion || "Anledning");
+  setText("lblFrom",        L.from || "Fra");
+  setText("lblTo",          L.to || "Til");
+  setText("lblSuggestions", L.suggestions || "Forslag");
+  setText("lblMessage",     L.message || "Din tekst");
+
+  setText("btnNext1",   L.next1 || "Vælg design");
+  setText("btnNext2",   L.next2 || "Skriv teksten");
+  setText("designHint", L.designHint || "Swipe/scroll – klik for at vælge.");
+
+  /* ✅ NYT: oversæt den lille note under kortet */
+  if(exportNotes && exportNotes.length){
+    const fallback = {
+      da: "PNG/PDF genereres ud fra samme layout.",
+      en: "PNG/PDF are generated from the same layout.",
+      de: "PNG/PDF werden aus demselben Layout erzeugt.",
+      pl: "PNG/PDF są generowane z tego samego układu.",
+      lt: "PNG/PDF generuojami iš to paties maketo."
     };
-
-    setText("subtitle",     L.subtitle || "");
-    setText("wizardTitle",  L.wizardTitle || "Opsætning");
-    setText("previewTitle", L.previewTitle || "Live preview");
-
-    setText("layer1Title",  L.layer1Title || "Lag 1");
-    setText("layer2Title",  L.layer2Title || "Lag 2");
-    setText("layer3Title",  L.layer3Title || "Lag 3");
-
-    setText("lblLang",       L.lang || "Sprog");
-    setText("lblTheme",      L.theme || "Tema");
-    setText("lblType",       L.type || "Korttype");
-    setText("lblOccasion",   L.occasion || "Anledning");
-    setText("lblFrom",       L.from || "Fra");
-    setText("lblTo",         L.to || "Til");
-    setText("lblSuggestions",L.suggestions || "Forslag");
-    setText("lblMessage",    L.message || "Din tekst");
-
-    setText("btnNext1",   L.next1 || "Vælg design");
-    setText("btnNext2",   L.next2 || "Skriv teksten");
-    setText("designHint", L.designHint || "Swipe/scroll – klik for at vælge.");
-
-    // help
-    if(helpList){
-      helpList.innerHTML = "";
-      (L.help || []).forEach((line) => {
-        const li = document.createElement("li");
-        li.textContent = line;
-        helpList.appendChild(li);
-      });
-    }
-
-    // re-init type labels når sprog ændres
-    initTypeSelect();
-
-    // status + chosen chip
-    refreshStatus();
-    refreshDesignChosenLabel();
+    const txt = L.exportNote || fallback[state.lang] || fallback.en;
+    exportNotes.forEach(el => { el.textContent = txt; });
   }
+
+  // help
+  if(helpList){
+    helpList.innerHTML = "";
+    (L.help || []).forEach((line) => {
+      const li = document.createElement("li");
+      li.textContent = line;
+      helpList.appendChild(li);
+    });
+  }
+
+  // re-init type labels når sprog ændres
+  initTypeSelect();
+
+  // status + chosen chip
+  refreshStatus();
+  refreshDesignChosenLabel();
+}
+
 
   /* =========================================================
      AFSNIT 07 – Special / Anledning visibility
