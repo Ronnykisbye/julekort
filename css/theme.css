@@ -28,7 +28,7 @@
 
 
 /* =========================================================
-   AFSNIT 02 – DARK THEME
+   AFSNIT 02 – DARK THEME (læselige felter/menupunkter)
 ========================================================= */
 html[data-theme="dark"],
 body[data-theme="dark"]{
@@ -42,11 +42,15 @@ body[data-theme="dark"]{
   --muted2: rgba(255,255,255,0.55);
 
   --border: rgba(255,255,255,0.16);
+
+  /* NYT: input/select/textarea */
+  --fieldBg: rgba(255,255,255,0.10);
+  --fieldText: rgba(255,255,255,0.92);
+  --fieldBorder: rgba(255,255,255,0.22);
 }
 
-
 /* =========================================================
-   AFSNIT 03 – LIGHT THEME
+   AFSNIT 03 – LIGHT THEME (læselige felter/menupunkter)
 ========================================================= */
 html[data-theme="light"],
 body[data-theme="light"]{
@@ -60,6 +64,11 @@ body[data-theme="light"]{
   --muted2: rgba(10,16,26,0.48);
 
   --border: rgba(10,16,26,0.12);
+
+  /* NYT: input/select/textarea */
+  --fieldBg: rgba(255,255,255,0.92);
+  --fieldText: rgba(10,16,26,0.92);
+  --fieldBorder: rgba(10,16,26,0.14);
 }
 
 
