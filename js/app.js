@@ -195,63 +195,63 @@ const stepBlocks = Array.from(document.querySelectorAll(".card.block"));
     typeSelect.value = state.type;
   }
 
-  /* =========================================================
-     AFSNIT 06 – Theme + UI tekster
-  ========================================================= */
-  function applyTheme(){
-    document.documentElement.setAttribute("data-theme", state.theme);
-    if(document.body) document.body.setAttribute("data-theme", state.theme);
+ /* =========================================================
+   AFSNIT 06 – Tekster (MATCHER data.js)
+========================================================= */
+function applyTexts(){
+  const L = t().ui || {};
 
-    if(themeLight) themeLight.classList.toggle("active", state.theme === "light");
-    if(themeDark)  themeDark.classList.toggle("active",  state.theme === "dark");
-  }
+  const set = (id, txt) => {
+    const el = document.getElementById(id);
+    if(el && txt != null) el.textContent = String(txt);
+  };
 
-  function applyTexts(){
-    const L = t();
+  set("subtitle", L.subtitle);
+  set("wizardTitle", L.wizardTitle);
+  set("previewTitle", L.previewTitle);
 
-    const setText = (id, txt) => {
-      const el = $(id);
-      if(el) el.textContent = (txt != null ? String(txt) : "");
+  set("layer1Title", L.layer1Title);
+  set("layer2Title", L.layer2Title);
+  set("layer3Title", L.layer3Title);
+
+  set("lblLang", L.lang);
+  set("lblTheme", L.theme);
+  set("lblType", L.type);
+  set("lblOccasion", L.occasion);
+  set("lblFrom", L.from);
+  set("lblTo", L.to);
+  set("lblSuggestions", L.suggestions);
+  set("lblMessage", L.message);
+
+  set("btnNext1", L.next1);
+  set("btnNext2", L.next2);
+  set("designHint", L.designHint);
+
+  /* NYT: oversæt den lille note under preview */
+  if(exportNote){
+    const fallback = {
+      da: "PNG/PDF genereres ud fra samme layout.",
+      en: "PNG/PDF are generated from the same layout.",
+      de: "PNG/PDF werden aus demselben Layout erzeugt.",
+      pl: "PNG/PDF są generowane z tego samego układu.",
+      lt: "PNG/PDF generuojami iš to paties maketo."
     };
-
-    setText("subtitle",     L.subtitle || "");
-    setText("wizardTitle",  L.wizardTitle || "Opsætning");
-    setText("previewTitle", L.previewTitle || "Live preview");
-
-    setText("layer1Title",  L.layer1Title || "Lag 1");
-    setText("layer2Title",  L.layer2Title || "Lag 2");
-    setText("layer3Title",  L.layer3Title || "Lag 3");
-
-    setText("lblLang",       L.lang || "Sprog");
-    setText("lblTheme",      L.theme || "Tema");
-    setText("lblType",       L.type || "Korttype");
-    setText("lblOccasion",   L.occasion || "Anledning");
-    setText("lblFrom",       L.from || "Fra");
-    setText("lblTo",         L.to || "Til");
-    setText("lblSuggestions",L.suggestions || "Forslag");
-    setText("lblMessage",    L.message || "Din tekst");
-
-    setText("btnNext1",   L.next1 || "Vælg design");
-    setText("btnNext2",   L.next2 || "Skriv teksten");
-    setText("designHint", L.designHint || "Swipe/scroll – klik for at vælge.");
-
-    // help
-    if(helpList){
-      helpList.innerHTML = "";
-      (L.help || []).forEach((line) => {
-        const li = document.createElement("li");
-        li.textContent = line;
-        helpList.appendChild(li);
-      });
-    }
-
-    // re-init type labels når sprog ændres
-    initTypeSelect();
-
-    // status + chosen chip
-    refreshStatus();
-    refreshDesignChosenLabel();
+    exportNote.textContent = L.exportNote || fallback[state.lang] || fallback.en;
   }
+
+  // help
+  if(helpList){
+    helpList.innerHTML = "";
+    (L.help || []).forEach(line => {
+      const li = document.createElement("li");
+      li.textContent = line;
+      helpList.appendChild(li);
+    });
+  }
+
+  initTypeSelect();
+  refreshOccasionVisibility();
+}
 
   /* =========================================================
      AFSNIT 07 – Special / Anledning visibility
