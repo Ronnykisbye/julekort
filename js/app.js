@@ -228,38 +228,14 @@ function refreshOccasionVisibility(){
   }
 }
 
+/* =========================================================
+   AFSNIT 07 – Wizard (legacy)  [DEAKTIVERET]
+   (Vi bruger KUN setStep i AFSNIT 08)
+========================================================= */
+// NOTE:
+// Du har haft 2 setStep()-funktioner. Det ødelægger flowet.
+// Denne sektion er bevidst tom, så AFSNIT 08 er den ENESTE setStep().
 
-  /* =========================================================
-     AFSNIT 07 – Wizard (kun ét lag ad gangen)
-  ========================================================= */
-  function setStep(step){
-    state.step = step;
-    saveState();
-
-    stepBlocks.forEach(block => {
-      const s = parseInt(block.dataset.step, 10);
-      block.classList.toggle("active", s === step);
-    });
-
-    if(btnBack) btnBack.disabled = (step === 1);
-
-    refreshProgress();
-    refreshStatus();
-  }
-
-  function refreshProgress(){
-    if(!progressBar) return;
-    const pct = ((state.step - 1) / 2) * 100; // 1..3
-    progressBar.style.width = `${Math.max(0, Math.min(100, pct))}%`;
-  }
-
-  function refreshStatus(){
-    if(!statusChip) return;
-    const L = t();
-    if(state.step === 1) statusChip.textContent = L.status1 || "Vælg Lag 1";
-    if(state.step === 2) statusChip.textContent = L.status2 || "Vælg design";
-    if(state.step === 3) statusChip.textContent = L.status3 || "Skriv tekst";
-  }
 
  /* =========================================================
    AFSNIT 08 – Wizard / setStep (STABIL + opdaterer altid UI)
@@ -554,38 +530,42 @@ function refreshActionbarEnabled(){
   }
 
 /* =========================================================
-   AFSNIT 11 – Events / bruger-interaktion (STABIL + Sprog-tekst + Design)
+   AFSNIT 11 – Events / bruger-interaktion (STABIL)
 ========================================================= */
 function bindEvents(){
 
   /* ---------- Sprog ---------- */
   if(langSelect){
     langSelect.addEventListener("change", () => {
-      const prevLang = state.lang;
-      const prevList = buildSuggestions(prevLang);
-
       state.lang = langSelect.value;
       saveState();
 
       applyTexts();
       refreshOccasionVisibility();
 
-      // Hvis teksten før var et "forslag", må vi gerne auto-skifte den til nyt sprog
-      if(state.messageMode !== "custom" || prevList.includes(state.message)){
-        state.messageMode = "suggestion";
+      // Hvis brugeren ikke har skrevet selv, skal teksten følge sprog/type
+      if(state.messageMode !== "custom"){
+        refreshSuggestions();
       }
 
-      refreshSuggestions();   // sætter nyt forslag hvis suggestion
       refreshPreviewText();
     });
   }
 
   /* ---------- Tema ---------- */
   if(themeLight){
-    themeLight.addEventListener("click", () => { state.theme="light"; saveState(); applyTheme(); });
+    themeLight.addEventListener("click", () => {
+      state.theme = "light";
+      saveState();
+      applyTheme();
+    });
   }
   if(themeDark){
-    themeDark.addEventListener("click", () => { state.theme="dark"; saveState(); applyTheme(); });
+    themeDark.addEventListener("click", () => {
+      state.theme = "dark";
+      saveState();
+      applyTheme();
+    });
   }
 
   /* ---------- Korttype ---------- */
@@ -593,14 +573,14 @@ function bindEvents(){
     typeSelect.addEventListener("change", () => {
       state.type = typeSelect.value;
       saveState();
+
       refreshOccasionVisibility();
 
-      // Ved type-skift: hvis teksten var et forslag, opdater den også
+      // Ved type-skift: hvis tekst er forslag, opdater den
       if(state.messageMode !== "custom"){
-        state.messageMode = "suggestion";
+        refreshSuggestions();
       }
 
-      refreshSuggestions();
       refreshPreviewText();
     });
   }
@@ -611,23 +591,12 @@ function bindEvents(){
       state.occasion = occasionInput.value;
       saveState();
 
+      // Opdater forslag hvis vi er i suggestion-mode
       if(state.messageMode !== "custom"){
-        refreshSuggestions(); // opdater special-tekster
+        refreshSuggestions();
       }
+
       refreshPreviewText();
-    });
-  }
-
-  /* ---------- Design (delegation – virker altid) ---------- */
-  if(designStrip){
-    designStrip.addEventListener("click", (e) => {
-      const tile = e.target.closest(".design-tile");
-      if(!tile) return;
-      const id = tile.getAttribute("data-id");
-      if(!id) return;
-
-      selectDesign(id);
-      setStep(3);
     });
   }
 
@@ -641,7 +610,38 @@ function bindEvents(){
     });
   }
 
-  /* ---------- Forslag ---------- */
+  /* ---------- Design (delegation – virker altid) ---------- */
+  if(designStrip){
+    designStrip.addEventListener("click", (e) => {
+      const tile = e.target.closest(".design-tile");
+      if(!tile) return;
+
+      const id = tile.getAttribute("data-id");
+      if(!id) return;
+
+      // Gem valgt design
+      state.designId = id;
+      saveState();
+
+      // Markér aktiv tile
+      document.querySelectorAll(".design-tile").forEach(t =>
+        t.classList.toggle("active", t.getAttribute("data-id") === id)
+      );
+
+      // UI-status (Intet valgt -> valgt)
+      if(designChosen) designChosen.textContent = id;
+      if(toStep3) toStep3.disabled = false;
+
+      // Opdater preview-design + tekst
+      applyDesignToPreview();
+      refreshPreviewText();
+
+      // Hop til tekst
+      setStep(3);
+    });
+  }
+
+  /* ---------- Forslag (dropdown) ---------- */
   if(suggestSelect){
     suggestSelect.addEventListener("change", () => {
       const idx = parseInt(suggestSelect.value, 10);
@@ -651,7 +651,11 @@ function bindEvents(){
     });
   }
 
-  if(btnRandom) btnRandom.addEventListener("click", () => randomSuggestion());
+  if(btnRandom){
+    btnRandom.addEventListener("click", () => {
+      randomSuggestion();
+    });
+  }
 
   /* ---------- Fri tekst ---------- */
   if(messageInput){
@@ -665,17 +669,26 @@ function bindEvents(){
 
   /* ---------- Fra / Til ---------- */
   if(fromInput){
-    fromInput.addEventListener("input", () => { state.from = fromInput.value; saveState(); refreshPreviewText(); });
+    fromInput.addEventListener("input", () => {
+      state.from = fromInput.value;
+      saveState();
+      refreshPreviewText();
+    });
   }
+
   if(toInput){
-    toInput.addEventListener("input", () => { state.to = toInput.value; saveState(); refreshPreviewText(); });
+    toInput.addEventListener("input", () => {
+      state.to = toInput.value;
+      saveState();
+      refreshPreviewText();
+    });
   }
 
   /* ---------- Output ---------- */
-  if(btnPng) btnPng.addEventListener("click", downloadPNG);
-  if(btnPdf) btnPdf.addEventListener("click", printAsPDF);
+  if(btnPng)  btnPng.addEventListener("click", downloadPNG);
+  if(btnPdf)  btnPdf.addEventListener("click", printAsPDF);
   if(btnMail) btnMail.addEventListener("click", sendEmail);
-  if(btnShare) btnShare.addEventListener("click", shareCard);
+  if(btnShare)btnShare.addEventListener("click", shareCard);
 
   /* ---------- Reset ---------- */
   if(btnReset){
@@ -686,15 +699,22 @@ function bindEvents(){
   }
 
   /* ---------- Hjælp ---------- */
-  if(btnHelp) btnHelp.addEventListener("click", () => { if(helpModal) helpModal.hidden = false; });
-  if(btnCloseHelp) btnCloseHelp.addEventListener("click", () => { if(helpModal) helpModal.hidden = true; });
+  if(btnHelp){
+    btnHelp.addEventListener("click", () => {
+      if(helpModal) helpModal.hidden = false;
+    });
+  }
+  if(btnCloseHelp){
+    btnCloseHelp.addEventListener("click", () => {
+      if(helpModal) helpModal.hidden = true;
+    });
+  }
   if(helpModal){
     helpModal.addEventListener("click", (e) => {
       if(e.target.classList.contains("modal-backdrop")) helpModal.hidden = true;
     });
   }
 }
-
 
   /* =========================================================
      AFSNIT 12 – Restore UI + Boot
