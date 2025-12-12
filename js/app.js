@@ -344,7 +344,7 @@ function refreshOccasionVisibility(){
     }
   }
 
-  /* =========================================================
+/* =========================================================
    AFSNIT 09 – Suggestions + Preview
 ========================================================= */
 function currentOccasionToken(){
@@ -363,18 +363,12 @@ function currentOccasionToken(){
   return placeholders[state.lang] || "[ write occasion ]";
 }
 
-
 function buildSuggestions(){
-  const pack =
-    (window.CARD_DATA.suggestions || {})[state.lang] ||
-    (window.CARD_DATA.suggestions || {}).da ||
-    {};
+  const lang = t();
+  const type = state.type || "xmas";
+  const source = (lang.suggestions && lang.suggestions[type]) ? lang.suggestions[type] : [];
 
-  const list = pack[state.type] || [];
-
-  // Kun “special” bruger {occasion}, men det er ok at replace altid
-  const occ = currentOccasionToken();
-  return list.map(s => String(s).replaceAll("{occasion}", occ));
+  return source.map((s) => String(s || "").replaceAll("{occasion}", currentOccasionToken()));
 }
 
 function refreshSuggestions(){
@@ -406,12 +400,15 @@ function randomSuggestion(){
   const list = buildSuggestions();
   if(!list.length) return;
   const pick = list[Math.floor(Math.random() * list.length)];
-  // NYT: random er også en "suggestion"
   setMessage(pick, "suggestion");
 }
 
 function refreshPreviewText(){
-  if(previewBadge) previewBadge.textContent = typeLabel();
+  // Badge: vis også anledning ved "special"
+  if(previewBadge){
+    const base = typeLabel();
+    previewBadge.textContent = isSpecialType() ? `${base}: ${currentOccasionToken()}` : base;
+  }
 
   const L = t();
   const to = (state.to || "").trim();
@@ -431,6 +428,14 @@ function refreshPreviewText(){
   if(charCount && messageInput) charCount.textContent = String((messageInput.value || "").length);
 
   refreshActionbarEnabled();
+}
+
+function refreshActionbarEnabled(){
+  const ready = Boolean(state.designId);
+  if(btnPng)  btnPng.disabled  = !ready;
+  if(btnPdf)  btnPdf.disabled  = !ready;
+  if(btnMail) btnMail.disabled = !ready;
+  if(btnShare)btnShare.disabled= !ready;
 }
 
   /* =========================================================
