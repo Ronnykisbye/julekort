@@ -153,48 +153,57 @@
 }
 
 /* =========================================================
-   AFSNIT 05 – Form felter (læseligt i dark + light)
+   AFSNIT 05 – Menuer, knapper og tekst (LÆSEligt i dark mode)
 ========================================================= */
-.row{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-@media (max-width: 520px){
-  .row{ grid-template-columns: 1fr; }
+
+/* Labels / overskrifter */
+.label,
+.block-title,
+.step-badge,
+.hint,
+.chip,
+.panel-head h2{
+  color: var(--text);
 }
 
-.field{
-  display:flex;
-  flex-direction:column;
-  gap: 6px;
-}
-
-.label{
-  font-size: 12px;
-  color: var(--muted);
-}
-
-select, input, textarea{
-  width:100%;
-  border-radius: 14px;
-  border: 1px solid var(--fieldBorder);
+/* Select, input, textarea */
+select,
+input,
+textarea{
   background: var(--fieldBg);
   color: var(--fieldText);
-  padding: 10px 12px;
-  outline: none;
+  border: 1px solid var(--fieldBorder);
 }
 
-select:focus, input:focus, textarea:focus{
-  box-shadow: 0 0 0 3px rgba(139,247,255,0.18);
+/* Dropdown options (vigtigt i dark mode) */
+select option{
+  background: #0b1220;
+  color: #ffffff;
 }
 
-textarea{ resize:none; min-height: 110px; line-height: 1.25; }
+/* Buttons generelt */
+button{
+  color: var(--text);
+}
 
-.counter{
-  font-size: 12px;
-  color: var(--muted2);
-  margin-top: 6px;
+/* Segmented (Light / Dark) */
+.segmented .seg{
+  background: var(--panel2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.segmented .seg.active{
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #081018;
+}
+
+/* Hover / focus – men teksten skal ALTID være synlig */
+select:hover,
+input:hover,
+textarea:hover,
+button:hover{
+  color: var(--text);
 }
 
 
