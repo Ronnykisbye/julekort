@@ -205,10 +205,29 @@ function setMessage(txt, mode){
     refreshStatus();
   }
 
-  function refreshOccasionVisibility(){
-    const isSpecial = state.type === "special";
-    if(occasionWrap) occasionWrap.hidden = !isSpecial;
+ function isSpecialType(){
+  // Robust: virker uanset om data.js bruger id "special" eller key "special"
+  if(state.type === "special") return true;
+
+  const types = (window.CARD_DATA.types || []);
+  const tp = types.find(x => x.id === state.type);
+  if(!tp) return false;
+
+  return tp.key === "special" || tp.id === "special";
+}
+
+function refreshOccasionVisibility(){
+  const show = isSpecialType();
+  if(occasionWrap) occasionWrap.hidden = !show;
+
+  // Hvis vi ikke er special: nulstil feltet (så det ikke “blander sig”)
+  if(!show){
+    state.occasion = "";
+    if(occasionInput) occasionInput.value = "";
+    saveState();
   }
+}
+
 
   /* =========================================================
      AFSNIT 07 – Wizard (kun ét lag ad gangen)
