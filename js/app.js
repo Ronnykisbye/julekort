@@ -14,54 +14,59 @@
   const $ = (id) => document.getElementById(id);
 
   /* =========================================================
-     AFSNIT 01 – DOM refs (matcher index.html)
-  ========================================================= */
-  const langSelect    = $("langSelect");
-  const typeSelect    = $("typeSelect");
-  const occasionWrap  = $("occasionWrap");
-  const occasionInput = $("occasionInput");
+   AFSNIT 01 – DOM refs
+========================================================= */
+const langSelect = $("langSelect");
+const typeSelect = $("typeSelect");
+const occasionWrap = $("occasionWrap");
+const occasionInput = $("occasionInput");
 
-  const themeLight = $("themeLight");
-  const themeDark  = $("themeDark");
+const themeLight = $("themeLight");
+const themeDark  = $("themeDark");
 
-  const toStep2 = $("toStep2");
-  const toStep3 = $("toStep3");
+const toStep2 = $("toStep2");
+const toStep3 = $("toStep3");
 
-  const designStrip  = $("designStrip");
-  const designChosen = $("designChosen");
+const designStrip  = $("designStrip");
+const designChosen = $("designChosen");
 
-  const fromInput    = $("fromInput");
-  const toInput      = $("toInput");
-  const suggestSelect = $("suggestSelect");
-  const messageInput  = $("messageInput");
-  const charCount     = $("charCount");
+const fromInput = $("fromInput");
+const toInput   = $("toInput");
+const suggestSelect = $("suggestSelect");
+const messageInput  = $("messageInput");
+const charCount     = $("charCount");
 
-  const previewBadge   = $("previewBadge");
-  const previewStamp   = $("previewStamp");
-  const previewTo      = $("previewTo");
-  const previewFrom    = $("previewFrom");
-  const previewMessage = $("previewMessage");
-  const cardPreview    = $("cardPreview");
-  const previewMode    = $("previewMode");
+const previewBadge   = $("previewBadge");
+const previewStamp   = $("previewStamp");
+const previewTo      = $("previewTo");
+const previewFrom    = $("previewFrom");
+const previewMessage = $("previewMessage");
+const cardPreview    = $("cardPreview");
 
-  const progressBar = $("progressBar");
-  const statusChip  = $("statusChip");
+const previewMode = $("previewMode");
 
-  const btnBack  = $("btnBack");
-  const btnPng   = $("btnPng");
-  const btnPdf   = $("btnPdf");
-  const btnMail  = $("btnMail");
-  const btnShare = $("btnShare");
+const progressBar = $("progressBar");
+const statusChip  = $("statusChip");
 
-  const btnRandom = $("btnRandom");
-  const btnReset  = $("btnReset");
+/* NYT: den lille note under preview (har ingen id i HTML, så vi finder den via class) */
+const exportNote = document.querySelector(".small-note");
 
-  const btnHelp = $("btnHelp");
-  const helpModal = $("helpModal");
-  const btnCloseHelp = $("btnCloseHelp");
-  const helpList = $("helpList");
+const btnBack  = $("btnBack");
+const btnPng   = $("btnPng");
+const btnPdf   = $("btnPdf");
+const btnMail  = $("btnMail");
+const btnShare = $("btnShare");
 
-  const stepBlocks = Array.from(document.querySelectorAll(".card.block"));
+const btnRandom = $("btnRandom");
+const btnReset  = $("btnReset");
+
+const btnHelp = $("btnHelp");
+const helpModal = $("helpModal");
+const btnCloseHelp = $("btnCloseHelp");
+const helpList = $("helpList");
+
+const stepBlocks = Array.from(document.querySelectorAll(".card.block"));
+
 
   /* =========================================================
      AFSNIT 02 – Data guard (HÅRD validering)
