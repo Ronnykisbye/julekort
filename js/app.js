@@ -554,35 +554,38 @@ function refreshActionbarEnabled(){
   }
 
 /* =========================================================
-   AFSNIT 11 – Events / bruger-interaktion (STABIL)
+   AFSNIT 11 – Events / bruger-interaktion (STABIL + Sprog-tekst + Design)
 ========================================================= */
 function bindEvents(){
 
   /* ---------- Sprog ---------- */
   if(langSelect){
     langSelect.addEventListener("change", () => {
+      const prevLang = state.lang;
+      const prevList = buildSuggestions(prevLang);
+
       state.lang = langSelect.value;
       saveState();
+
       applyTexts();
-      refreshSuggestions();
+      refreshOccasionVisibility();
+
+      // Hvis teksten før var et "forslag", må vi gerne auto-skifte den til nyt sprog
+      if(state.messageMode !== "custom" || prevList.includes(state.message)){
+        state.messageMode = "suggestion";
+      }
+
+      refreshSuggestions();   // sætter nyt forslag hvis suggestion
       refreshPreviewText();
     });
   }
 
   /* ---------- Tema ---------- */
   if(themeLight){
-    themeLight.addEventListener("click", () => {
-      state.theme = "light";
-      saveState();
-      applyTheme();
-    });
+    themeLight.addEventListener("click", () => { state.theme="light"; saveState(); applyTheme(); });
   }
   if(themeDark){
-    themeDark.addEventListener("click", () => {
-      state.theme = "dark";
-      saveState();
-      applyTheme();
-    });
+    themeDark.addEventListener("click", () => { state.theme="dark"; saveState(); applyTheme(); });
   }
 
   /* ---------- Korttype ---------- */
@@ -590,19 +593,41 @@ function bindEvents(){
     typeSelect.addEventListener("change", () => {
       state.type = typeSelect.value;
       saveState();
-      refreshOccasionVisibility(); // skjul/vis anledning korrekt
-      refreshSuggestions();        // opdater forslag (og auto-tekst hvis ikke custom)
+      refreshOccasionVisibility();
+
+      // Ved type-skift: hvis teksten var et forslag, opdater den også
+      if(state.messageMode !== "custom"){
+        state.messageMode = "suggestion";
+      }
+
+      refreshSuggestions();
       refreshPreviewText();
     });
   }
 
-  /* ---------- Anledning (kun special) ---------- */
+  /* ---------- Anledning ---------- */
   if(occasionInput){
     occasionInput.addEventListener("input", () => {
       state.occasion = occasionInput.value;
       saveState();
-      refreshSuggestions();
+
+      if(state.messageMode !== "custom"){
+        refreshSuggestions(); // opdater special-tekster
+      }
       refreshPreviewText();
+    });
+  }
+
+  /* ---------- Design (delegation – virker altid) ---------- */
+  if(designStrip){
+    designStrip.addEventListener("click", (e) => {
+      const tile = e.target.closest(".design-tile");
+      if(!tile) return;
+      const id = tile.getAttribute("data-id");
+      if(!id) return;
+
+      selectDesign(id);
+      setStep(3);
     });
   }
 
@@ -620,13 +645,13 @@ function bindEvents(){
   if(suggestSelect){
     suggestSelect.addEventListener("change", () => {
       const idx = parseInt(suggestSelect.value, 10);
-      const list = buildSuggestions();
+      const list = buildSuggestions(state.lang);
       const picked = list[idx] || list[0] || "";
       setMessage(picked, "suggestion");
     });
   }
 
-  if(btnRandom) btnRandom.addEventListener("click", randomSuggestion);
+  if(btnRandom) btnRandom.addEventListener("click", () => randomSuggestion());
 
   /* ---------- Fri tekst ---------- */
   if(messageInput){
@@ -640,19 +665,10 @@ function bindEvents(){
 
   /* ---------- Fra / Til ---------- */
   if(fromInput){
-    fromInput.addEventListener("input", () => {
-      state.from = fromInput.value;
-      saveState();
-      refreshPreviewText();
-    });
+    fromInput.addEventListener("input", () => { state.from = fromInput.value; saveState(); refreshPreviewText(); });
   }
-
   if(toInput){
-    toInput.addEventListener("input", () => {
-      state.to = toInput.value;
-      saveState();
-      refreshPreviewText();
-    });
+    toInput.addEventListener("input", () => { state.to = toInput.value; saveState(); refreshPreviewText(); });
   }
 
   /* ---------- Output ---------- */
@@ -670,18 +686,15 @@ function bindEvents(){
   }
 
   /* ---------- Hjælp ---------- */
-  if(btnHelp){
-    btnHelp.addEventListener("click", () => { if(helpModal) helpModal.hidden = false; });
-  }
-  if(btnCloseHelp){
-    btnCloseHelp.addEventListener("click", () => { if(helpModal) helpModal.hidden = true; });
-  }
+  if(btnHelp) btnHelp.addEventListener("click", () => { if(helpModal) helpModal.hidden = false; });
+  if(btnCloseHelp) btnCloseHelp.addEventListener("click", () => { if(helpModal) helpModal.hidden = true; });
   if(helpModal){
     helpModal.addEventListener("click", (e) => {
       if(e.target.classList.contains("modal-backdrop")) helpModal.hidden = true;
     });
   }
 }
+
 
   /* =========================================================
      AFSNIT 12 – Restore UI + Boot
