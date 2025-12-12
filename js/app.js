@@ -291,6 +291,7 @@ function setStep(step){
 }
 
 
+
 /* =========================================================
    AFSNIT 09 – Suggestions + Preview
 ========================================================= */
@@ -310,18 +311,18 @@ function currentOccasionToken(){
   return placeholders[state.lang] || "[ write occasion ]";
 }
 
-function buildSuggestions(){
-  const lang = t();
+function buildSuggestions(langCode){
+  const lang = langCode ? (window.CARD_DATA.i18n?.[langCode] || window.CARD_DATA.i18n?.da) : t();
   const type = state.type || "xmas";
-  const source = (lang.suggestions && lang.suggestions[type]) ? lang.suggestions[type] : [];
 
+  const source = (lang.suggestions && lang.suggestions[type]) ? lang.suggestions[type] : [];
   return source.map((s) => String(s || "").replaceAll("{occasion}", currentOccasionToken()));
 }
 
 function refreshSuggestions(){
   if(!suggestSelect) return;
 
-  const list = buildSuggestions();
+  const list = buildSuggestions(state.lang);
   suggestSelect.innerHTML = "";
 
   list.forEach((txt, idx) => {
@@ -351,8 +352,10 @@ function randomSuggestion(){
 }
 
 function refreshPreviewText(){
- // Badge: vis kun korttypen (anledning bruges kun inde i selve forslagsteksterne)
+
+// Badge: vis kun korttypen (anledning bruges kun inde i selve forslagsteksterne)
 if(previewBadge) previewBadge.textContent = typeLabel();
+
 
 
   const L = t();
