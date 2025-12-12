@@ -334,312 +334,155 @@ function setStep(step){
     btnShare.disabled = !ready;
   }
 
-  /* =========================================================
-     AFSNIT 10 – Output (PNG / PDF / Email / Share) + Events + Boot
-  ========================================================= */
-  function getActiveDesign(){
-    return window.CARD_DATA.designs.find(x=>x.id===state.designId) || window.CARD_DATA.designs[0];
-  }
-
-  function getFontStack(){
-    return "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
-  }
-
-  function roundRect(ctx, x,y,w,h,r){
-    const rr = Math.min(r, w/2, h/2);
-    ctx.beginPath();
-    ctx.moveTo(x+rr,y);
-    ctx.arcTo(x+w,y,x+w,y+h,rr);
-    ctx.arcTo(x+w,y+h,x,y+h,rr);
-    ctx.arcTo(x,y+h,x,y,rr);
-    ctx.arcTo(x,y,x+w,y,rr);
-    ctx.closePath();
-  }
-
-  function drawWrappedText(ctx, text, x, y, maxWidth, maxHeight, lineHeight){
-    const words = (text || "").split(/\s+/).filter(Boolean);
-    if(!words.length) return;
-
-    let line = "";
-    let yy = y;
-
-    let fontSize = parseInt(ctx.font, 10);
-    if(words.length > 40) fontSize = Math.max(44, Math.floor(fontSize * 0.82));
-    if(words.length > 80) fontSize = Math.max(40, Math.floor(fontSize * 0.78));
-    ctx.font = `${fontSize}px ${getFontStack()}`;
-    lineHeight = Math.floor(fontSize * 1.18);
-
-    for(let i=0; i<words.length; i++){
-      const test = line ? line + " " + words[i] : words[i];
-      if(ctx.measureText(test).width <= maxWidth){
-        line = test;
-      } else {
-        ctx.fillText(line, x, yy);
-        yy += lineHeight;
-        line = words[i];
-        if(yy > y + maxHeight) break;
-      }
-    }
-    if(yy <= y + maxHeight) ctx.fillText(line, x, yy);
-  }
-
-  function fileBaseName(){
-    const safe = (s)=> (s||"").trim().toLowerCase().replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"");
-    const tp = safe(typeLabel()) || "kort";
-    const to = safe(state.to) || "til";
-    const from = safe(state.from) || "fra";
-    return `kisbye-${tp}-${to}-${from}`.slice(0,60);
-  }
-
-  function renderCardToCanvas(scale=2){
-    const d = getActiveDesign();
-    const W = 1080 * scale;
-    const H = 1350 * scale;
-
-    const c = document.createElement("canvas");
-    c.width = W;
-    c.height = H;
-    const ctx = c.getContext("2d");
-
-    const g = ctx.createLinearGradient(0, 0, W, H);
-    g.addColorStop(0, d.a);
-    g.addColorStop(0.55, d.b);
-    g.addColorStop(1, d.c);
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,W,H);
-
-    function blob(x,y,r,alpha){
-      const rg = ctx.createRadialGradient(x,y,0,x,y,r);
-      rg.addColorStop(0, `rgba(255,255,255,${alpha})`);
-      rg.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = rg;
-      ctx.fillRect(x-r,y-r,r*2,r*2);
-    }
-    blob(W*0.25, H*0.18, W*0.32, 0.16);
-    blob(W*0.78, H*0.22, W*0.36, 0.12);
-    blob(W*0.60, H*0.86, W*0.44, 0.10);
-
-    ctx.strokeStyle = "rgba(255,255,255,0.35)";
-    ctx.lineWidth = 6*scale;
-    roundRect(ctx, 40*scale, 40*scale, W-80*scale, H-80*scale, 54*scale);
-    ctx.stroke();
-
-    const badgeText = typeLabel();
-    ctx.font = `${36*scale}px ${getFontStack()}`;
-    const badgeW = ctx.measureText(badgeText).width + 46*scale;
-    ctx.fillStyle = "rgba(255,255,255,0.18)";
-    ctx.strokeStyle = "rgba(255,255,255,0.28)";
-    ctx.lineWidth = 3*scale;
-    roundRect(ctx, 70*scale, 80*scale, badgeW, 64*scale, 999*scale);
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
-    ctx.fillText(badgeText, 92*scale, 124*scale);
-
-    ctx.font = `${64*scale}px ${getFontStack()}`;
-    ctx.fillText(d.icon, W - 150*scale, 132*scale);
-
-    const toLine = (state.to||"").trim() ? `${t().to}: ${(state.to||"").trim()}` : `${t().to}: …`;
-    const fromLine = (state.from||"").trim() ? `${t().from}: ${(state.from||"").trim()}` : `${t().from}: …`;
-    const msg = (state.message||"").trim() || "";
-
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
-    ctx.font = `${44*scale}px ${getFontStack()}`;
-    ctx.fillText(toLine, 90*scale, 260*scale);
-
-    ctx.font = `${72*scale}px ${getFontStack()}`;
-    ctx.fillStyle = "rgba(255,255,255,0.96)";
-    drawWrappedText(ctx, msg, 90*scale, 340*scale, W - 180*scale, 740*scale, 84*scale);
-
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
-    ctx.font = `${44*scale}px ${getFontStack()}`;
-    ctx.fillText(fromLine, 90*scale, H - 170*scale);
-
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.font = `${30*scale}px ${getFontStack()}`;
-    ctx.fillText("kisbye.eu", W - 210*scale, H - 95*scale);
-
-    return c;
-  }
-
-  async function downloadPNG(){
-    const canvas = renderCardToCanvas(2);
-    canvas.toBlob((blob)=>{
-      if(!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileBaseName() + ".png";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }, "image/png");
-  }
-
-  function printAsPDF(){
-    window.print();
-  }
-
-  function sendEmail(){
-    const subj = `${typeLabel()} – ${((state.to||"").trim() ? (state.to||"").trim() : "")}`.trim();
-    const bodyLines = [
-      `${typeLabel()}`,
-      "",
-      `${t().to}: ${(state.to||"").trim() || "…"}`,
-      `${t().from}: ${(state.from||"").trim() || "…"}`,
-      "",
-      (state.message||"").trim()
-    ];
-    const body = encodeURIComponent(bodyLines.join("\n"));
-    window.location.href = `mailto:?subject=${encodeURIComponent(subj)}&body=${body}`;
-  }
-
-  async function shareCard(){
-    const text = (state.message||"").trim();
-    const title = typeLabel();
-
-    const canvas = renderCardToCanvas(2);
-    const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
-    const canShareFiles = blob && navigator.canShare && navigator.canShare({ files: [new File([blob], "kort.png", {type:"image/png"})] });
-
-    try{
-      if(canShareFiles){
-        const file = new File([blob], fileBaseName()+".png", { type:"image/png" });
-        await navigator.share({ title, text, files:[file] });
-      } else if(navigator.share){
-        await navigator.share({ title, text });
-      } else {
-        await navigator.clipboard.writeText(text);
-        alert("Din tekst er kopieret – del den hvor du vil.");
-      }
-    }catch(e){}
-  }
-
-  function bindEvents(){
-    langSelect.addEventListener("change", ()=>{
-      state.lang = langSelect.value;
-      saveState();
-      applyTexts();
-      refreshPreviewText();
-    });
-
-    typeSelect.addEventListener("change", ()=>{
-      state.type = typeSelect.value;
-      saveState();
-      refreshOccasionVisibility();
-      refreshSuggestions();
-      previewBadge.textContent = typeLabel();
-    });
-
-    occasionInput.addEventListener("input", ()=>{
-      state.occasion = occasionInput.value;
-      saveState();
-      refreshSuggestions();
-    });
-
-    themeLight.addEventListener("click", ()=>{
-      state.theme = "light";
-      saveState();
-      applyTheme();
-    });
-    themeDark.addEventListener("click", ()=>{
-      state.theme = "dark";
-      saveState();
-      applyTheme();
-    });
-
-    toStep2.addEventListener("click", ()=> setStep(2));
-
-    toStep3.addEventListener("click", ()=>{
-      if(!state.designId) return;
-      setStep(3);
-    });
-
-    fromInput.addEventListener("input", ()=>{
-      state.from = fromInput.value;
-      saveState();
-      refreshPreviewText();
-    });
-
-    toInput.addEventListener("input", ()=>{
-      state.to = toInput.value;
-      saveState();
-      refreshPreviewText();
-    });
-
-    suggestSelect.addEventListener("change", ()=>{
-      const idx = parseInt(suggestSelect.value, 10);
-      const list = buildSuggestions();
-      const picked = list[idx] || list[0] || "";
-      state.message = picked;
-      messageInput.value = picked;
-      saveState();
-      refreshPreviewText();
-    });
-
-    messageInput.addEventListener("input", ()=>{
-      state.message = messageInput.value;
-      saveState();
-      refreshPreviewText();
-    });
-
-    btnRandom.addEventListener("click", randomSuggestion);
-
-    btnReset.addEventListener("click", ()=>{
-      localStorage.removeItem(STORAGE_KEY);
-      location.reload();
-    });
-
-    btnPng.addEventListener("click", downloadPNG);
-    btnPdf.addEventListener("click", printAsPDF);
-    btnMail.addEventListener("click", sendEmail);
-    btnShare.addEventListener("click", shareCard);
-
-    btnHelp.addEventListener("click", ()=> { helpModal.hidden = false; });
-    btnCloseHelp.addEventListener("click", ()=> { helpModal.hidden = true; });
-    helpModal.addEventListener("click", (e)=>{
-      const target = e.target;
-      if(target && target.dataset && target.dataset.close === "1") helpModal.hidden = true;
-    });
-  }
-
-  function restoreUI(){
-    langSelect.value = state.lang;
-    typeSelect.value = state.type;
-
-    occasionInput.value = state.occasion || "";
-    refreshOccasionVisibility();
-
-    fromInput.value = state.from || "";
-    toInput.value = state.to || "";
-    messageInput.value = state.message || "";
-
-    applyTheme();
+ /* =========================================================
+   AFSNIT 10 – Events + Boot (simpel wizard + tilbage)
+========================================================= */
+function bindEvents(){
+  // Sprog
+  langSelect.addEventListener("change", ()=>{
+    state.lang = langSelect.value;
+    saveState();
     applyTexts();
-    buildDesignTiles();
-
-    if(state.designId){
-      toStep3.disabled = false;
-      applyDesignToPreview();
-    } else {
-      toStep3.disabled = true;
-    }
-
     refreshPreviewText();
-    refreshProgress();
-  }
+  });
 
-  function boot(){
-    loadState();
-    initLanguageSelect();
+  // Korttype
+  typeSelect.addEventListener("change", ()=>{
+    state.type = typeSelect.value;
+    saveState();
+    refreshOccasionVisibility();
+    refreshSuggestions();
+    refreshPreviewText();
+  });
+
+  // Anledning (kun special)
+  occasionInput.addEventListener("input", ()=>{
+    state.occasion = occasionInput.value;
+    saveState();
+    refreshSuggestions();
+    refreshPreviewText();
+  });
+
+  // Tema
+  themeLight.addEventListener("click", ()=>{
+    state.theme = "light";
+    saveState();
     applyTheme();
-    bindEvents();
-    restoreUI();
+  });
+  themeDark.addEventListener("click", ()=>{
+    state.theme = "dark";
+    saveState();
+    applyTheme();
+  });
 
-    // Start altid i Lag 1 (simpel wizard)
-    setStep(1);
+  // Wizard navigation
+  toStep2.addEventListener("click", ()=> setStep(2));
+
+  toStep3.addEventListener("click", ()=>{
+    if(!state.designId) return;
+    setStep(3);
+  });
+
+  // Tilbage (altid muligt at komme tilbage)
+  if (btnBack){
+    btnBack.addEventListener("click", ()=>{
+      const next = Math.max(1, (state.step || 1) - 1);
+      setStep(next);
+    });
   }
 
-  boot();
+  // Fra/Til
+  fromInput.addEventListener("input", ()=>{
+    state.from = fromInput.value;
+    saveState();
+    refreshPreviewText();
+  });
 
-})();
+  toInput.addEventListener("input", ()=>{
+    state.to = toInput.value;
+    saveState();
+    refreshPreviewText();
+  });
+
+  // Forslag
+  suggestSelect.addEventListener("change", ()=>{
+    const idx = parseInt(suggestSelect.value, 10);
+    const list = buildSuggestions();
+    const picked = list[idx] || list[0] || "";
+    state.message = picked;
+    messageInput.value = picked;
+    saveState();
+    refreshPreviewText();
+  });
+
+  // Fri tekst
+  messageInput.addEventListener("input", ()=>{
+    state.message = messageInput.value;
+    saveState();
+    refreshPreviewText();
+  });
+
+  // Ny variant / reset
+  btnRandom.addEventListener("click", randomSuggestion);
+  btnReset.addEventListener("click", ()=>{
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  });
+
+  // Output
+  btnPng.addEventListener("click", downloadPNG);
+  btnPdf.addEventListener("click", printAsPDF);
+  btnMail.addEventListener("click", sendEmail);
+  btnShare.addEventListener("click", shareCard);
+
+  // Help modal
+  btnHelp.addEventListener("click", ()=> { helpModal.hidden = false; });
+  btnCloseHelp.addEventListener("click", ()=> { helpModal.hidden = true; });
+  helpModal.addEventListener("click", (e)=>{
+    const target = e.target;
+    if(target && target.dataset && target.dataset.close === "1") helpModal.hidden = true;
+  });
+}
+
+function restoreUI(){
+  // Restore values
+  langSelect.value = state.lang;
+  typeSelect.value = state.type;
+
+  occasionInput.value = state.occasion || "";
+  refreshOccasionVisibility();
+
+  fromInput.value = state.from || "";
+  toInput.value = state.to || "";
+  messageInput.value = state.message || "";
+
+  // Apply UI
+  applyTheme();
+  applyTexts();
+  buildDesignTiles();
+
+  if(state.designId){
+    toStep3.disabled = false;
+    applyDesignToPreview();
+  } else {
+    toStep3.disabled = true;
+  }
+
+  refreshPreviewText();
+  refreshProgress();
+  refreshStatus();
+}
+
+function boot(){
+  loadState();
+  initLanguageSelect();
+  applyTheme();
+
+  bindEvents();
+  restoreUI();
+
+  // Start altid i Lag 1
+  setStep(1);
+}
+
+boot();
