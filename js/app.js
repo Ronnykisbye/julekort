@@ -63,35 +63,49 @@
     return window.CARD_DATA && window.CARD_DATA.labels && window.CARD_DATA.languages;
   }
 
-  /* =========================================================
-     AFSNIT 03 – State + storage
-  ========================================================= */
-  const STORAGE_KEY = "kisbye_julekort_state_v2";
+ /* =========================================================
+   AFSNIT 03 – State + storage
+========================================================= */
+const STORAGE_KEY = "kisbye_julekort_state_v2";
 
-  const state = {
-    lang: "da",
-    theme: "dark",
-    type: "xmas",
-    occasion: "",
-    designId: null,
-    from: "",
-    to: "",
-    message: "",
-    step: 1
-  };
+const state = {
+  lang: "da",
+  theme: "dark",
+  type: "xmas",
+  occasion: "",
+  designId: null,
+  from: "",
+  to: "",
 
-  function loadState(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return;
-      const s = JSON.parse(raw);
-      Object.assign(state, s || {});
-    }catch(e){}
-  }
+  // NYT: messageMode styrer om vi må auto-skifte tekst ved sprogskift
+  // "suggestion" = appen må automatisk skifte tekst når sprog/type ændres
+  // "custom"     = brugeren har skrevet selv, så vi må ikke overskrive
+  message: "",
+  messageMode: "suggestion",
 
-  function saveState(){
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
-  }
+  step: 1
+};
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const s = JSON.parse(raw);
+    Object.assign(state, s || {});
+  }catch(e){}
+}
+
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+}
+
+function setMessage(txt, mode){
+  state.message = txt || "";
+  state.messageMode = mode || "suggestion";
+  if(messageInput) messageInput.value = state.message;
+  saveState();
+  refreshPreviewText();
+}
 
   /* =========================================================
      AFSNIT 04 – i18n helpers
@@ -312,80 +326,81 @@
   }
 
   /* =========================================================
-     AFSNIT 09 – Suggestions + Preview
-  ========================================================= */
-  function currentOccasionToken(){
-    const occ = (state.occasion || "").trim();
-    return occ.length ? occ : (state.lang==="da" ? "anledningen" : "occasion");
+   AFSNIT 09 – Suggestions + Preview
+========================================================= */
+function currentOccasionToken(){
+  const occ = (state.occasion || "").trim();
+  return occ.length ? occ : (state.lang==="da" ? "anledningen" : "occasion");
+}
+
+function buildSuggestions(){
+  const pack =
+    (window.CARD_DATA.suggestions || {})[state.lang] ||
+    (window.CARD_DATA.suggestions || {}).da ||
+    {};
+
+  const list = pack[state.type] || [];
+
+  // Kun “special” bruger {occasion}, men det er ok at replace altid
+  const occ = currentOccasionToken();
+  return list.map(s => String(s).replaceAll("{occasion}", occ));
+}
+
+function refreshSuggestions(){
+  if(!suggestSelect) return;
+
+  const list = buildSuggestions();
+  suggestSelect.innerHTML = "";
+
+  list.forEach((txt, idx) => {
+    const opt = document.createElement("option");
+    opt.value = String(idx);
+    opt.textContent = txt;
+    suggestSelect.appendChild(opt);
+  });
+
+  // NYT: Hvis teksten er "suggestion", så følger den automatisk sprog/type/anledning
+  if(state.messageMode !== "custom"){
+    const first = list[0] || "";
+    suggestSelect.value = "0";
+    setMessage(first, "suggestion");
+    return;
   }
 
-  function buildSuggestions(){
-    const pack = (window.CARD_DATA.suggestions || {})[state.lang]
-      || (window.CARD_DATA.suggestions || {}).da
-      || {};
+  // Hvis brugeren har custom tekst, så rør vi ikke ved den
+  refreshPreviewText();
+}
 
-    const list = pack[state.type] || [];
-    const occ = currentOccasionToken();
-    return list.map(s => String(s).replaceAll("{occasion}", occ));
+function randomSuggestion(){
+  const list = buildSuggestions();
+  if(!list.length) return;
+  const pick = list[Math.floor(Math.random() * list.length)];
+  // NYT: random er også en "suggestion"
+  setMessage(pick, "suggestion");
+}
+
+function refreshPreviewText(){
+  if(previewBadge) previewBadge.textContent = typeLabel();
+
+  const L = t();
+  const to = (state.to || "").trim();
+  const from = (state.from || "").trim();
+  const msg = (state.message || "").trim();
+
+  if(previewTo) previewTo.textContent = to ? `${L.to || "Til"}: ${to}` : `${L.to || "Til"}: …`;
+  if(previewFrom) previewFrom.textContent = from ? `${L.from || "Fra"}: ${from}` : `${L.from || "Fra"}: …`;
+
+  if(previewMessage){
+    if(msg) previewMessage.textContent = msg;
+    else previewMessage.textContent = state.designId
+      ? (L.writeYourText || "Skriv din tekst…")
+      : (L.pickDesignFirst || "Vælg et design og skriv din tekst…");
   }
 
-  function refreshSuggestions(){
-    if(!suggestSelect) return;
+  if(charCount && messageInput) charCount.textContent = String((messageInput.value || "").length);
 
-    suggestSelect.innerHTML = "";
-    const list = buildSuggestions();
-
-    list.forEach((txt, idx) => {
-      const opt = document.createElement("option");
-      opt.value = String(idx);
-      opt.textContent = txt;
-      suggestSelect.appendChild(opt);
-    });
-
-    if(!state.message || !state.message.trim()){
-      const first = list[0] || "";
-      state.message = first;
-      if(messageInput) messageInput.value = first;
-      saveState();
-    }
-
-    refreshPreviewText();
-  }
-
-  function randomSuggestion(){
-    const list = buildSuggestions();
-    if(!list.length) return;
-    const pick = list[Math.floor(Math.random() * list.length)];
-    state.message = pick;
-    if(messageInput) messageInput.value = pick;
-    saveState();
-    refreshPreviewText();
-  }
-
-  function refreshPreviewText(){
-    if(previewBadge) previewBadge.textContent = typeLabel();
-
-    const L = t();
-    const to = (state.to || "").trim();
-    const from = (state.from || "").trim();
-    const msg = (state.message || "").trim();
-
-    if(previewTo) previewTo.textContent = to ? `${L.to || "Til"}: ${to}` : `${L.to || "Til"}: …`;
-    if(previewFrom) previewFrom.textContent = from ? `${L.from || "Fra"}: ${from}` : `${L.from || "Fra"}: …`;
-    if(previewMessage) previewMessage.textContent = msg ? msg : (state.designId ? "Skriv din tekst…" : "Vælg et design og skriv din tekst…");
-
-    if(charCount && messageInput) charCount.textContent = String((messageInput.value || "").length);
-
-    refreshActionbarEnabled();
-  }
-
-  function refreshActionbarEnabled(){
-    const ready = Boolean(state.designId) && (state.message || "").trim().length > 0;
-    if(btnPng) btnPng.disabled = !ready;
-    if(btnPdf) btnPdf.disabled = !ready;
-    if(btnMail) btnMail.disabled = !ready;
-    if(btnShare) btnShare.disabled = !ready;
-  }
+  refreshActionbarEnabled();
+}
 
   /* =========================================================
      AFSNIT 10 – Output (PNG / PDF / Email / Share)
@@ -554,113 +569,130 @@
     }catch(e){}
   }
 
-  /* =========================================================
-     AFSNIT 11 – Events
-  ========================================================= */
-  function bindEvents(){
-    langSelect.addEventListener("change", ()=>{
-      state.lang = langSelect.value;
-      saveState();
-      applyTexts();
-      refreshPreviewText();
-    });
+ /* =========================================================
+   AFSNIT 11 – Events / bruger-interaktion
+========================================================= */
 
-    typeSelect.addEventListener("change", ()=>{
-      state.type = typeSelect.value;
-      saveState();
-      refreshOccasionVisibility();
-      refreshSuggestions();
-      refreshPreviewText();
-    });
+/* ---------- Sprog ---------- */
+langSelect.addEventListener("change", () => {
+  state.lang = langSelect.value;
+  saveState();
 
-    if(occasionInput){
-      occasionInput.addEventListener("input", ()=>{
-        state.occasion = occasionInput.value;
-        saveState();
-        refreshSuggestions();
-        refreshPreviewText();
-      });
-    }
+  applyTexts();          // labels, overskrifter mm.
+  refreshSuggestions(); // NYT: opdater forslag + tekst hvis ikke custom
+});
 
-    themeLight.addEventListener("click", ()=>{
-      state.theme = "light";
-      saveState();
-      applyTheme();
-    });
 
-    themeDark.addEventListener("click", ()=>{
-      state.theme = "dark";
-      saveState();
-      applyTheme();
-    });
+/* ---------- Tema (Light / Dark) ---------- */
+themeLight.addEventListener("click", () => {
+  state.theme = "light";
+  document.documentElement.setAttribute("data-theme", "light");
+  themeLight.classList.add("active");
+  themeDark.classList.remove("active");
+  saveState();
+});
 
-    toStep2.addEventListener("click", ()=> setStep(2));
+themeDark.addEventListener("click", () => {
+  state.theme = "dark";
+  document.documentElement.setAttribute("data-theme", "dark");
+  themeDark.classList.add("active");
+  themeLight.classList.remove("active");
+  saveState();
+});
 
-    toStep3.addEventListener("click", ()=>{
-      if(!state.designId) return;
-      setStep(3);
-    });
 
-    if(btnBack){
-      btnBack.addEventListener("click", ()=>{
-        setStep(Math.max(1, (state.step || 1) - 1));
-      });
-    }
+/* ---------- Korttype ---------- */
+typeSelect.addEventListener("change", () => {
+  state.type = typeSelect.value;
+  saveState();
 
-    fromInput.addEventListener("input", ()=>{
-      state.from = fromInput.value;
-      saveState();
-      refreshPreviewText();
-    });
+  refreshOccasionVisibility(); // vis/skjul “Anledning”
+  refreshSuggestions();        // NYT: skift forslag hvis ikke custom
+});
 
-    toInput.addEventListener("input", ()=>{
-      state.to = toInput.value;
-      saveState();
-      refreshPreviewText();
-    });
 
-    suggestSelect.addEventListener("change", ()=>{
-      const idx = parseInt(suggestSelect.value, 10);
-      const list = buildSuggestions();
-      const picked = list[idx] || list[0] || "";
-      state.message = picked;
-      messageInput.value = picked;
-      saveState();
-      refreshPreviewText();
-    });
+/* ---------- Anledning (kun special occasion) ---------- */
+if (occasionInput) {
+  occasionInput.addEventListener("input", () => {
+    state.occasion = occasionInput.value;
+    saveState();
 
-    messageInput.addEventListener("input", ()=>{
-      state.message = messageInput.value;
-      saveState();
-      refreshPreviewText();
-    });
+    // NYT: påvirker teksten, men kun hvis brugeren ikke selv har skrevet
+    refreshSuggestions();
+  });
+}
 
-    btnRandom.addEventListener("click", randomSuggestion);
 
-    btnReset.addEventListener("click", ()=>{
-      try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
-      location.reload();
-    });
+/* ---------- Designvalg ---------- */
+designStrip.addEventListener("click", (e) => {
+  const tile = e.target.closest(".design-tile");
+  if (!tile) return;
 
-    btnPng.addEventListener("click", downloadPNG);
-    btnPdf.addEventListener("click", printAsPDF);
-    btnMail.addEventListener("click", sendEmail);
-    btnShare.addEventListener("click", shareCard);
+  const id = tile.getAttribute("data-id");
+  state.designId = id;
+  saveState();
 
-    // Help
-    if(btnHelp && helpModal){
-      btnHelp.addEventListener("click", ()=> { helpModal.hidden = false; });
-    }
-    if(btnCloseHelp && helpModal){
-      btnCloseHelp.addEventListener("click", ()=> { helpModal.hidden = true; });
-    }
-    if(helpModal){
-      helpModal.addEventListener("click", (e)=>{
-        const target = e.target;
-        if(target && target.dataset && target.dataset.close === "1") helpModal.hidden = true;
-      });
-    }
-  }
+  document.querySelectorAll(".design-tile").forEach(t =>
+    t.classList.toggle("active", t === tile)
+  );
+
+  applyDesign(id);
+  goToStep(3); // hop automatisk til tekst
+});
+
+
+/* ---------- Forslag (dropdown) ---------- */
+suggestSelect.addEventListener("change", () => {
+  const idx = parseInt(suggestSelect.value, 10);
+  const list = buildSuggestions();
+  const picked = list[idx] || list[0] || "";
+
+  // NYT: forslag tæller som “suggestion”
+  setMessage(picked, "suggestion");
+});
+
+
+/* ---------- Ny variant (tilfældigt forslag) ---------- */
+btnRandom.addEventListener("click", () => {
+  randomSuggestion(); // sætter også messageMode = "suggestion"
+});
+
+
+/* ---------- Fri tekst (brugeren skriver selv) ---------- */
+messageInput.addEventListener("input", () => {
+  state.message = messageInput.value;
+  state.messageMode = "custom"; // VIGTIGT: må ikke overskrives af sprogskift
+  saveState();
+  refreshPreviewText();
+});
+
+
+/* ---------- Fra / Til ---------- */
+fromInput.addEventListener("input", () => {
+  state.from = fromInput.value;
+  saveState();
+  refreshPreviewText();
+});
+
+toInput.addEventListener("input", () => {
+  state.to = toInput.value;
+  saveState();
+  refreshPreviewText();
+});
+
+
+/* ---------- Navigation (lag / wizard) ---------- */
+btnBack.addEventListener("click", () => {
+  goToStep(Math.max(1, state.step - 1));
+});
+
+document.querySelectorAll("[data-step]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const step = parseInt(btn.getAttribute("data-step"), 10);
+    goToStep(step);
+  });
+});
+
 
   /* =========================================================
      AFSNIT 12 – Restore UI + Boot
