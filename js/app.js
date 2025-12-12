@@ -164,22 +164,39 @@
     refreshStatus();
   }
 
-/* =========================================================
-   AFSNIT 06 – SIMPEL WIZARD (KUN ÉT LAG AD GANGEN)
-========================================================= */
-function setStep(step){
-  state.step = step;
-  saveState();
+  /* =========================================================
+     AFSNIT 06 – SIMPEL WIZARD (KUN ÉT LAG AD GANGEN)
+  ========================================================= */
+  function setStep(step){
+    state.step = step;
+    saveState();
 
-  stepBlocks.forEach(block => {
-    const s = parseInt(block.dataset.step, 10);
-    block.classList.toggle("active", s === step);
-  });
+    // Vis kun det aktive lag
+    stepBlocks.forEach(block => {
+      const s = parseInt(block.dataset.step, 10);
+      if (s === step) block.classList.add("active");
+      else block.classList.remove("active");
+    });
 
-  refreshProgress();
-  refreshStatus();
-}
+    refreshProgress();
+    refreshStatus();
+  }
 
+  function refreshProgress(){
+    const pct = (state.step - 1) / 2 * 100;
+    progressBar.style.width = `${pct}%`;
+  }
+
+  function refreshStatus(){
+    if(state.step === 1) statusChip.textContent = t().status1;
+    if(state.step === 2) statusChip.textContent = t().status2;
+    if(state.step === 3) statusChip.textContent = t().status3;
+  }
+
+  function refreshOccasionVisibility(){
+    const isSpecial = state.type === "special";
+    occasionWrap.hidden = !isSpecial;
+  }
 
   /* =========================================================
      AFSNIT 07 – Designs
@@ -210,7 +227,7 @@ function setStep(step){
 
       tile.addEventListener("click", () => {
         selectDesign(d.id);
-        setStep(3); // efter design: hop direkte til tekst (mere “wizard”)
+        setStep(3); // efter design: hop til tekst
       });
 
       designStrip.appendChild(tile);
@@ -329,7 +346,7 @@ function setStep(step){
   }
 
   /* =========================================================
-     AFSNIT 10 – Output (PNG / PDF / Email / Share)
+     AFSNIT 10 – Output (PNG / PDF / Email / Share) + Events + Boot
   ========================================================= */
   function getActiveDesign(){
     return window.CARD_DATA.designs.find(x=>x.id===state.designId) || window.CARD_DATA.designs[0];
@@ -436,4 +453,204 @@ function setStep(step){
     const fromLine = (state.from||"").trim() ? `${t().from}: ${(state.from||"").trim()}` : `${t().from}: …`;
     const msg = (state.message||"").trim() || "";
 
-    ct
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.font = `${44*scale}px ${getFontStack()}`;
+    ctx.fillText(toLine, 90*scale, 260*scale);
+
+    ctx.font = `${72*scale}px ${getFontStack()}`;
+    ctx.fillStyle = "rgba(255,255,255,0.96)";
+    drawWrappedText(ctx, msg, 90*scale, 340*scale, W - 180*scale, 740*scale, 84*scale);
+
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.font = `${44*scale}px ${getFontStack()}`;
+    ctx.fillText(fromLine, 90*scale, H - 170*scale);
+
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = `${30*scale}px ${getFontStack()}`;
+    ctx.fillText("kisbye.eu", W - 210*scale, H - 95*scale);
+
+    return c;
+  }
+
+  async function downloadPNG(){
+    const canvas = renderCardToCanvas(2);
+    canvas.toBlob((blob)=>{
+      if(!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileBaseName() + ".png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  }
+
+  function printAsPDF(){
+    window.print();
+  }
+
+  function sendEmail(){
+    const subj = `${typeLabel()} – ${((state.to||"").trim() ? (state.to||"").trim() : "")}`.trim();
+    const bodyLines = [
+      `${typeLabel()}`,
+      "",
+      `${t().to}: ${(state.to||"").trim() || "…"}`,
+      `${t().from}: ${(state.from||"").trim() || "…"}`,
+      "",
+      (state.message||"").trim()
+    ];
+    const body = encodeURIComponent(bodyLines.join("\n"));
+    window.location.href = `mailto:?subject=${encodeURIComponent(subj)}&body=${body}`;
+  }
+
+  async function shareCard(){
+    const text = (state.message||"").trim();
+    const title = typeLabel();
+
+    const canvas = renderCardToCanvas(2);
+    const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+    const canShareFiles = blob && navigator.canShare && navigator.canShare({ files: [new File([blob], "kort.png", {type:"image/png"})] });
+
+    try{
+      if(canShareFiles){
+        const file = new File([blob], fileBaseName()+".png", { type:"image/png" });
+        await navigator.share({ title, text, files:[file] });
+      } else if(navigator.share){
+        await navigator.share({ title, text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        alert("Din tekst er kopieret – del den hvor du vil.");
+      }
+    }catch(e){}
+  }
+
+  function bindEvents(){
+    langSelect.addEventListener("change", ()=>{
+      state.lang = langSelect.value;
+      saveState();
+      applyTexts();
+      refreshPreviewText();
+    });
+
+    typeSelect.addEventListener("change", ()=>{
+      state.type = typeSelect.value;
+      saveState();
+      refreshOccasionVisibility();
+      refreshSuggestions();
+      previewBadge.textContent = typeLabel();
+    });
+
+    occasionInput.addEventListener("input", ()=>{
+      state.occasion = occasionInput.value;
+      saveState();
+      refreshSuggestions();
+    });
+
+    themeLight.addEventListener("click", ()=>{
+      state.theme = "light";
+      saveState();
+      applyTheme();
+    });
+    themeDark.addEventListener("click", ()=>{
+      state.theme = "dark";
+      saveState();
+      applyTheme();
+    });
+
+    toStep2.addEventListener("click", ()=> setStep(2));
+
+    toStep3.addEventListener("click", ()=>{
+      if(!state.designId) return;
+      setStep(3);
+    });
+
+    fromInput.addEventListener("input", ()=>{
+      state.from = fromInput.value;
+      saveState();
+      refreshPreviewText();
+    });
+
+    toInput.addEventListener("input", ()=>{
+      state.to = toInput.value;
+      saveState();
+      refreshPreviewText();
+    });
+
+    suggestSelect.addEventListener("change", ()=>{
+      const idx = parseInt(suggestSelect.value, 10);
+      const list = buildSuggestions();
+      const picked = list[idx] || list[0] || "";
+      state.message = picked;
+      messageInput.value = picked;
+      saveState();
+      refreshPreviewText();
+    });
+
+    messageInput.addEventListener("input", ()=>{
+      state.message = messageInput.value;
+      saveState();
+      refreshPreviewText();
+    });
+
+    btnRandom.addEventListener("click", randomSuggestion);
+
+    btnReset.addEventListener("click", ()=>{
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    });
+
+    btnPng.addEventListener("click", downloadPNG);
+    btnPdf.addEventListener("click", printAsPDF);
+    btnMail.addEventListener("click", sendEmail);
+    btnShare.addEventListener("click", shareCard);
+
+    btnHelp.addEventListener("click", ()=> { helpModal.hidden = false; });
+    btnCloseHelp.addEventListener("click", ()=> { helpModal.hidden = true; });
+    helpModal.addEventListener("click", (e)=>{
+      const target = e.target;
+      if(target && target.dataset && target.dataset.close === "1") helpModal.hidden = true;
+    });
+  }
+
+  function restoreUI(){
+    langSelect.value = state.lang;
+    typeSelect.value = state.type;
+
+    occasionInput.value = state.occasion || "";
+    refreshOccasionVisibility();
+
+    fromInput.value = state.from || "";
+    toInput.value = state.to || "";
+    messageInput.value = state.message || "";
+
+    applyTheme();
+    applyTexts();
+    buildDesignTiles();
+
+    if(state.designId){
+      toStep3.disabled = false;
+      applyDesignToPreview();
+    } else {
+      toStep3.disabled = true;
+    }
+
+    refreshPreviewText();
+    refreshProgress();
+  }
+
+  function boot(){
+    loadState();
+    initLanguageSelect();
+    applyTheme();
+    bindEvents();
+    restoreUI();
+
+    // Start altid i Lag 1 (simpel wizard)
+    setStep(1);
+  }
+
+  boot();
+
+})();
