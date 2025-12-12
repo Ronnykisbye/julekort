@@ -195,64 +195,69 @@
     typeSelect.value = state.type;
   }
 
-  /* =========================================================
-     AFSNIT 06 – Tekster (MATCHER data.js)
-  ========================================================= */
-  function applyTexts(){
-    const L = t().ui || {};
+ /* =========================================================
+   AFSNIT 06 – Tekster (KORREKT i18n – MATCHER data.js)
+========================================================= */
+function applyTexts(){
+  // 🔥 VIGTIGT: labels ligger DIREKTE i labels[lang] – ikke i .ui
+  const L = t();
 
-    const set = (id, txt) => {
-      const el = document.getElementById(id);
-      if(el && txt != null) el.textContent = String(txt);
-    };
+  const set = (id, txt) => {
+    const el = document.getElementById(id);
+    if(el && txt != null) el.textContent = String(txt);
+  };
 
-    set("subtitle", L.subtitle);
-    set("wizardTitle", L.wizardTitle);
-    set("previewTitle", L.previewTitle);
+  set("subtitle", L.subtitle);
+  set("wizardTitle", L.wizardTitle);
+  set("previewTitle", L.previewTitle);
 
-    set("layer1Title", L.layer1Title);
-    set("layer2Title", L.layer2Title);
-    set("layer3Title", L.layer3Title);
+  set("layer1Title", L.layer1Title);
+  set("layer2Title", L.layer2Title);
+  set("layer3Title", L.layer3Title);
 
-    set("lblLang", L.lang);
-    set("lblTheme", L.theme);
-    set("lblType", L.type);
-    set("lblOccasion", L.occasion);
-    set("lblFrom", L.from);
-    set("lblTo", L.to);
-    set("lblSuggestions", L.suggestions);
-    set("lblMessage", L.message);
+  set("lblLang", L.lang);
+  set("lblTheme", L.theme);
+  set("lblType", L.type);
+  set("lblOccasion", L.occasion);
+  set("lblFrom", L.from);
+  set("lblTo", L.to);
+  set("lblSuggestions", L.suggestions);
+  set("lblMessage", L.message);
 
-    set("btnNext1", L.next1);
-    set("btnNext2", L.next2);
-    set("designHint", L.designHint);
+  set("btnNext1", L.next1);
+  set("btnNext2", L.next2);
+  set("designHint", L.designHint);
 
-    /* ✅ RETTELSE: oversæt ALLE små noter (ikke kun første) */
-    if(exportNotes.length){
-      const fallback = {
+  // ✅ PNG/PDF note
+  if(exportNotes.length){
+    const txt =
+      L.exportNote ||
+      {
         da: "PNG/PDF genereres ud fra samme layout.",
         en: "PNG/PDF are generated from the same layout.",
         de: "PNG/PDF werden aus demselben Layout erzeugt.",
         pl: "PNG/PDF są generowane z tego samego układu.",
         lt: "PNG/PDF generuojami iš to paties maketo."
-      };
-      const txt = L.exportNote || fallback[state.lang] || fallback.en;
-      exportNotes.forEach(el => { el.textContent = txt; });
-    }
+      }[state.lang];
 
-    // help
-    if(helpList){
-      helpList.innerHTML = "";
-      (L.help || []).forEach(line => {
-        const li = document.createElement("li");
-        li.textContent = line;
-        helpList.appendChild(li);
-      });
-    }
-
-    initTypeSelect();
-    refreshOccasionVisibility();
+    exportNotes.forEach(el => el.textContent = txt);
   }
+
+  // help
+  if(helpList){
+    helpList.innerHTML = "";
+    (L.help || []).forEach(line => {
+      const li = document.createElement("li");
+      li.textContent = line;
+      helpList.appendChild(li);
+    });
+  }
+
+  // 🔁 VIGTIGT: korttype labels skal genopbygges ved sprogsift
+  initTypeSelect();
+  refreshOccasionVisibility();
+}
+
 
   /* =========================================================
      AFSNIT 07 – Special / Anledning visibility
