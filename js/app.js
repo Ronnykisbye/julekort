@@ -7,7 +7,7 @@
   "use strict";
   const $ = (id) => document.getElementById(id);
 
-  /* =========================================================
+   /* =========================================================
      AFSNIT 01 – DOM refs
   ========================================================= */
   const langSelect = $("langSelect");
@@ -36,6 +36,9 @@
   const previewFrom    = $("previewFrom");
   const previewMessage = $("previewMessage");
   const cardPreview    = $("cardPreview");
+
+  // NYT: findes i index.html (chip i preview header)
+  const previewMode = $("previewMode");
 
   const progressBar = $("progressBar");
   const statusChip  = $("statusChip");
@@ -269,7 +272,7 @@ function setStep(step){
 
 
 /* =========================================================
-   AFSNIT 09 – Suggestions + Preview
+   AFSNIT 09 – Suggestions + Preview + Design (STABIL)
 ========================================================= */
 function currentOccasionToken(){
   const occ = (state.occasion || "").trim();
@@ -288,10 +291,14 @@ function currentOccasionToken(){
 }
 
 function buildSuggestions(langCode){
-  const lang = langCode ? (window.CARD_DATA.i18n?.[langCode] || window.CARD_DATA.i18n?.da) : t();
-  const type = state.type || "xmas";
+  // Robust: virker uanset om data.js bruger labels/i18n strukturer
+  const lang = langCode
+    ? (window.CARD_DATA.i18n?.[langCode] || window.CARD_DATA.i18n?.da || {})
+    : (t() || {});
 
+  const type = state.type || "xmas";
   const source = (lang.suggestions && lang.suggestions[type]) ? lang.suggestions[type] : [];
+
   return source.map((s) => String(s || "").replaceAll("{occasion}", currentOccasionToken()));
 }
 
@@ -308,7 +315,9 @@ function refreshSuggestions(){
     suggestSelect.appendChild(opt);
   });
 
-  // NYT: Hvis teksten er "suggestion", så følger den automatisk sprog/type/anledning
+  // Regelsæt:
+  // - suggestion: må auto-skifte ved sprog/type/anledning
+  // - custom: må IKKE overskrives
   if(state.messageMode !== "custom"){
     const first = list[0] || "";
     suggestSelect.value = "0";
@@ -316,23 +325,109 @@ function refreshSuggestions(){
     return;
   }
 
-  // Hvis brugeren har custom tekst, så rør vi ikke ved den
+  // custom: behold brugerens tekst
   refreshPreviewText();
 }
 
 function randomSuggestion(){
-  const list = buildSuggestions();
+  const list = buildSuggestions(state.lang);
   if(!list.length) return;
   const pick = list[Math.floor(Math.random() * list.length)];
   setMessage(pick, "suggestion");
 }
 
+/* ---------- Design tiles: bygges fra CARD_DATA.designs ---------- */
+function buildDesignTiles(){
+  if(!designStrip) return;
+  const designs = (window.CARD_DATA.designs || []);
+  designStrip.innerHTML = "";
+
+  designs.forEach((d) => {
+    const tile = document.createElement("div");
+    tile.className = "design-tile";
+    tile.setAttribute("data-id", d.id);
+
+    // Visuelt preview (gradient)
+    const a = d.a || "#1b2b66";
+    const b = d.b || "#6a4cff";
+    const c = d.c || a;
+    tile.style.backgroundImage = `linear-gradient(135deg, ${a}, ${b}, ${c})`;
+
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = d.name || d.id;
+
+    const icon = document.createElement("div");
+    icon.className = "icon";
+    icon.textContent = d.icon || "✨";
+
+    tile.appendChild(name);
+    tile.appendChild(icon);
+
+    // marker aktiv
+    if(state.designId && state.designId === d.id){
+      tile.classList.add("active");
+    }
+
+    designStrip.appendChild(tile);
+  });
+
+  // chip-tekst i step 2
+  refreshDesignChosenLabel();
+}
+
+function getDesignById(id){
+  const designs = (window.CARD_DATA.designs || []);
+  return designs.find(x => x.id === id) || null;
+}
+
+function refreshDesignChosenLabel(){
+  if(!designChosen) return;
+  if(!state.designId){
+    designChosen.textContent = "Intet valgt";
+    return;
+  }
+  const d = getDesignById(state.designId);
+  designChosen.textContent = d?.name || state.designId;
+}
+
+/* ---------- Påfør design til preview (CSS vars + ikon) ---------- */
+function applyDesignToPreview(){
+  if(!cardPreview) return;
+
+  const d = getDesignById(state.designId) || (window.CARD_DATA.designs || [])[0];
+  if(!d) return;
+
+  // Sæt CSS variabler på preview-kortet
+  cardPreview.style.setProperty("--cardA", d.a || "#1b2b66");
+  cardPreview.style.setProperty("--cardB", d.b || "#6a4cff");
+
+  // Stamp ikon i preview
+  if(previewStamp) previewStamp.textContent = d.icon || "✨";
+
+  refreshDesignChosenLabel();
+  refreshActionbarEnabled();
+}
+
+/* ---------- Statuschips (wizard + preview) ---------- */
+function refreshStatus(){
+  if(statusChip){
+    const L = t();
+    const stepTxt = (state.step === 1) ? (L.layer1Title || "Lag 1")
+                  : (state.step === 2) ? (L.layer2Title || "Lag 2")
+                  : (L.layer3Title || "Lag 3");
+    statusChip.textContent = `Vælg ${stepTxt}`;
+  }
+
+  if(previewMode){
+    const mode = state.messageMode === "custom" ? "Din tekst" : "Forslag";
+    previewMode.textContent = mode;
+  }
+}
+
 function refreshPreviewText(){
-
-// Badge: vis kun korttypen (anledning bruges kun inde i selve forslagsteksterne)
-if(previewBadge) previewBadge.textContent = typeLabel();
-
-
+  // Badge: vis kun korttypen (anledning bruges kun inde i selve forslagsteksterne)
+  if(previewBadge) previewBadge.textContent = typeLabel();
 
   const L = t();
   const to = (state.to || "").trim();
@@ -351,16 +446,10 @@ if(previewBadge) previewBadge.textContent = typeLabel();
 
   if(charCount && messageInput) charCount.textContent = String((messageInput.value || "").length);
 
+  refreshStatus();
   refreshActionbarEnabled();
 }
 
-function refreshActionbarEnabled(){
-  const ready = Boolean(state.designId);
-  if(btnPng)  btnPng.disabled  = !ready;
-  if(btnPdf)  btnPdf.disabled  = !ready;
-  if(btnMail) btnMail.disabled = !ready;
-  if(btnShare)btnShare.disabled= !ready;
-}
 
   /* =========================================================
      AFSNIT 10 – Output (PNG / PDF / Email / Share)
@@ -716,22 +805,26 @@ function bindEvents(){
   }
 }
 
-  /* =========================================================
+   /* =========================================================
      AFSNIT 12 – Restore UI + Boot
   ========================================================= */
   function restoreUI(){
-    langSelect.value = state.lang;
-    typeSelect.value = state.type;
+    // 1) Dropdowns / inputs
+    if(langSelect) langSelect.value = state.lang;
+    if(typeSelect) typeSelect.value = state.type;
 
     if(occasionInput) occasionInput.value = state.occasion || "";
     refreshOccasionVisibility();
 
-    fromInput.value = state.from || "";
-    toInput.value = state.to || "";
-    messageInput.value = state.message || "";
+    if(fromInput) fromInput.value = state.from || "";
+    if(toInput)   toInput.value = state.to || "";
+    if(messageInput) messageInput.value = state.message || "";
 
+    // 2) Tema + tekster
     applyTheme();
     applyTexts();
+
+    // 3) Designs
     buildDesignTiles();
 
     if(state.designId){
@@ -741,9 +834,9 @@ function bindEvents(){
       if(toStep3) toStep3.disabled = true;
     }
 
+    // 4) Forslag + preview (respekter messageMode)
+    refreshSuggestions();
     refreshPreviewText();
-    refreshProgress();
-    refreshStatus();
   }
 
   function boot(){
@@ -751,16 +844,15 @@ function bindEvents(){
       console.error("CARD_DATA mangler. Tjek js/data.js");
       return;
     }
+
     loadState();
     initLanguageSelect();
     applyTheme();
     bindEvents();
     restoreUI();
 
-    // Grund-version: start altid i lag 1
+    // Start stabilt i lag 1 (som du ønskede)
     setStep(1);
   }
 
   boot();
-
-})();
