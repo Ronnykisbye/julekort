@@ -725,3 +725,35 @@ body[data-theme="light"] .modal-card{
     radial-gradient(800px 900px at 50% 55%, transparent 55%, rgba(255,255,255,0.08) 100%);
   opacity: 0.50;
 }
+
+/* =========================================================
+   AFSNIT 50 – Mobile actionbar (2×2 knapper)
+   - Rører ikke desktop
+   - Gør actionbar pæn på mobil
+========================================================= */
+
+@media (max-width: 560px){
+
+  /* Actionbar-layout: 2 kolonner */
+  .actionbar{
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  /* Knapper fylder hver sin “celle” */
+  .actionbar button,
+  .actionbar .btn{
+    width: 100%;
+    min-height: 46px;
+  }
+
+  /* Hvis der er en tekst/label i actionbar, så lad den spænde over begge kolonner */
+  .actionbar .hint,
+  .actionbar .note,
+  .actionbar .small-note{
+    grid-column: 1 / -1;
+  }
+}
+
