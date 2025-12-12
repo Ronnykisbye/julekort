@@ -728,13 +728,9 @@ body[data-theme="light"] .modal-card{
 
 /* =========================================================
    AFSNIT 50 – Mobile actionbar (2×2 knapper)
-   - Rører ikke desktop
-   - Gør actionbar pæn på mobil
 ========================================================= */
-
 @media (max-width: 560px){
 
-  /* Actionbar-layout: 2 kolonner */
   .actionbar{
     display: grid !important;
     grid-template-columns: 1fr 1fr;
@@ -742,14 +738,13 @@ body[data-theme="light"] .modal-card{
     align-items: stretch;
   }
 
-  /* Knapper fylder hver sin “celle” */
   .actionbar button,
   .actionbar .btn{
     width: 100%;
     min-height: 46px;
   }
 
-  /* Hvis der er en tekst/label i actionbar, så lad den spænde over begge kolonner */
+  /* Hvis der er en note/tekst i actionbar, så lad den spænde over begge kolonner */
   .actionbar .hint,
   .actionbar .note,
   .actionbar .small-note{
