@@ -14,11 +14,11 @@
   const $ = (id) => document.getElementById(id);
 
   /* =========================================================
-     AFSNIT 01 – DOM refs
+     AFSNIT 01 – DOM refs (matcher index.html)
   ========================================================= */
-  const langSelect = $("langSelect");
-  const typeSelect = $("typeSelect");
-  const occasionWrap = $("occasionWrap");
+  const langSelect    = $("langSelect");
+  const typeSelect    = $("typeSelect");
+  const occasionWrap  = $("occasionWrap");
   const occasionInput = $("occasionInput");
 
   const themeLight = $("themeLight");
@@ -30,8 +30,8 @@
   const designStrip  = $("designStrip");
   const designChosen = $("designChosen");
 
-  const fromInput = $("fromInput");
-  const toInput   = $("toInput");
+  const fromInput    = $("fromInput");
+  const toInput      = $("toInput");
   const suggestSelect = $("suggestSelect");
   const messageInput  = $("messageInput");
   const charCount     = $("charCount");
@@ -42,15 +42,10 @@
   const previewFrom    = $("previewFrom");
   const previewMessage = $("previewMessage");
   const cardPreview    = $("cardPreview");
-
-  const previewMode = $("previewMode");
+  const previewMode    = $("previewMode");
 
   const progressBar = $("progressBar");
   const statusChip  = $("statusChip");
-
-  /* ✅ RETTELSE: der kan være flere .small-note i layoutet (desktop/mobile).
-     Vi opdaterer ALLE, så den rigtige altid skifter sprog. */
-  const exportNotes = Array.from(document.querySelectorAll(".small-note"));
 
   const btnBack  = $("btnBack");
   const btnPng   = $("btnPng");
@@ -195,69 +190,63 @@
     typeSelect.value = state.type;
   }
 
- /* =========================================================
-   AFSNIT 06 – Tekster (KORREKT i18n – MATCHER data.js)
-========================================================= */
-function applyTexts(){
-  // 🔥 VIGTIGT: labels ligger DIREKTE i labels[lang] – ikke i .ui
-  const L = t();
+  /* =========================================================
+     AFSNIT 06 – Theme + UI tekster
+  ========================================================= */
+  function applyTheme(){
+    document.documentElement.setAttribute("data-theme", state.theme);
+    if(document.body) document.body.setAttribute("data-theme", state.theme);
 
-  const set = (id, txt) => {
-    const el = document.getElementById(id);
-    if(el && txt != null) el.textContent = String(txt);
-  };
-
-  set("subtitle", L.subtitle);
-  set("wizardTitle", L.wizardTitle);
-  set("previewTitle", L.previewTitle);
-
-  set("layer1Title", L.layer1Title);
-  set("layer2Title", L.layer2Title);
-  set("layer3Title", L.layer3Title);
-
-  set("lblLang", L.lang);
-  set("lblTheme", L.theme);
-  set("lblType", L.type);
-  set("lblOccasion", L.occasion);
-  set("lblFrom", L.from);
-  set("lblTo", L.to);
-  set("lblSuggestions", L.suggestions);
-  set("lblMessage", L.message);
-
-  set("btnNext1", L.next1);
-  set("btnNext2", L.next2);
-  set("designHint", L.designHint);
-
-  // ✅ PNG/PDF note
-  if(exportNotes.length){
-    const txt =
-      L.exportNote ||
-      {
-        da: "PNG/PDF genereres ud fra samme layout.",
-        en: "PNG/PDF are generated from the same layout.",
-        de: "PNG/PDF werden aus demselben Layout erzeugt.",
-        pl: "PNG/PDF są generowane z tego samego układu.",
-        lt: "PNG/PDF generuojami iš to paties maketo."
-      }[state.lang];
-
-    exportNotes.forEach(el => el.textContent = txt);
+    if(themeLight) themeLight.classList.toggle("active", state.theme === "light");
+    if(themeDark)  themeDark.classList.toggle("active",  state.theme === "dark");
   }
 
-  // help
-  if(helpList){
-    helpList.innerHTML = "";
-    (L.help || []).forEach(line => {
-      const li = document.createElement("li");
-      li.textContent = line;
-      helpList.appendChild(li);
-    });
+  function applyTexts(){
+    const L = t();
+
+    const setText = (id, txt) => {
+      const el = $(id);
+      if(el) el.textContent = (txt != null ? String(txt) : "");
+    };
+
+    setText("subtitle",     L.subtitle || "");
+    setText("wizardTitle",  L.wizardTitle || "Opsætning");
+    setText("previewTitle", L.previewTitle || "Live preview");
+
+    setText("layer1Title",  L.layer1Title || "Lag 1");
+    setText("layer2Title",  L.layer2Title || "Lag 2");
+    setText("layer3Title",  L.layer3Title || "Lag 3");
+
+    setText("lblLang",       L.lang || "Sprog");
+    setText("lblTheme",      L.theme || "Tema");
+    setText("lblType",       L.type || "Korttype");
+    setText("lblOccasion",   L.occasion || "Anledning");
+    setText("lblFrom",       L.from || "Fra");
+    setText("lblTo",         L.to || "Til");
+    setText("lblSuggestions",L.suggestions || "Forslag");
+    setText("lblMessage",    L.message || "Din tekst");
+
+    setText("btnNext1",   L.next1 || "Vælg design");
+    setText("btnNext2",   L.next2 || "Skriv teksten");
+    setText("designHint", L.designHint || "Swipe/scroll – klik for at vælge.");
+
+    // help
+    if(helpList){
+      helpList.innerHTML = "";
+      (L.help || []).forEach((line) => {
+        const li = document.createElement("li");
+        li.textContent = line;
+        helpList.appendChild(li);
+      });
+    }
+
+    // re-init type labels når sprog ændres
+    initTypeSelect();
+
+    // status + chosen chip
+    refreshStatus();
+    refreshDesignChosenLabel();
   }
-
-  // 🔁 VIGTIGT: korttype labels skal genopbygges ved sprogsift
-  initTypeSelect();
-  refreshOccasionVisibility();
-}
-
 
   /* =========================================================
      AFSNIT 07 – Special / Anledning visibility
@@ -316,28 +305,14 @@ function applyTexts(){
   }
 
   /* =========================================================
-     AFSNIT 09 – Suggestions + Preview (MED design-hooks)
+     AFSNIT 09 – Suggestions + Preview
   ========================================================= */
-  function currentOccasionToken(){
-    const occ = (state.occasion || "").trim();
-    if(occ.length) return occ;
-
-    const placeholders = {
-      da: "[ skriv anledning ]",
-      en: "[ write occasion ]",
-      de: "[ Anlass eingeben ]",
-      pl: "[ wpisz okazję ]",
-      lt: "[ įrašyk progą ]"
-    };
-    return placeholders[state.lang] || "[ write occasion ]";
-  }
-
   function buildSuggestions(){
     const S = window.CARD_DATA.suggestions || {};
     const langBlock = S[state.lang] || S.da || {};
     const list = langBlock[state.type] || [];
 
-    return list.map(s =>
+    return (list || []).map((s) =>
       String(s || "").replaceAll("{occasion}", currentOccasionToken())
     );
   }
@@ -355,9 +330,9 @@ function applyTexts(){
       suggestSelect.appendChild(opt);
     });
 
-    // Regelsæt:
-    // suggestion → auto-skift
-    // custom → behold tekst
+    // regelsæt:
+    // suggestion -> auto skift til første forslag ved sprog/type/occasion
+    // custom     -> behold brugerens tekst
     if(state.messageMode !== "custom"){
       const first = list[0] || "";
       suggestSelect.value = "0";
@@ -376,57 +351,43 @@ function applyTexts(){
   }
 
   function refreshPreviewText(){
-    // === DESIGN-HOOKS TIL CSS ===
-    if(cardPreview){
-      cardPreview.dataset.type   = state.type || "";
-      cardPreview.dataset.design = state.designId || "";
-    }
+    const L = t();
 
-    // Badge = korttype
     if(previewBadge) previewBadge.textContent = typeLabel();
 
-    const L = t();
-    const to   = (state.to || "").trim();
+    const to = (state.to || "").trim();
     const from = (state.from || "").trim();
-    const msg  = (state.message || "").trim();
+    const msg = (state.message || "").trim();
 
-    if(previewTo){
-      previewTo.textContent = `${L.to || "Til"}: ${to || "…"}`;
-    }
-    if(previewFrom){
-      previewFrom.textContent = `${L.from || "Fra"}: ${from || "…"}`;
-    }
+    if(previewTo)   previewTo.textContent   = `${L.to || "Til"}: ${to || "…"}`;
+    if(previewFrom) previewFrom.textContent = `${L.from || "Fra"}: ${from || "…"}`;
 
     if(previewMessage){
-      if(msg){
-        previewMessage.textContent = msg;
-      }else{
-        previewMessage.textContent = state.designId
-          ? (L.writeYourText || "Skriv din tekst…")
-          : (L.pickDesignFirst || "Vælg et design og skriv din tekst…");
-      }
+      if(msg) previewMessage.textContent = msg;
+      else previewMessage.textContent = state.designId
+        ? (L.messagePlaceholder || "Skriv din tekst her...")
+        : (L.pickDesignFirst || "Vælg et design og skriv din tekst…");
     }
 
-    if(charCount && messageInput){
-      charCount.textContent = String(messageInput.value.length);
-    }
+    if(charCount && messageInput) charCount.textContent = String((messageInput.value || "").length);
 
     refreshStatus();
     refreshActionbarEnabled();
   }
 
   /* =========================================================
-     AFSNIT 10 – Design tiles + apply (MED design-hooks)
+     AFSNIT 10 – Design tiles + apply
   ========================================================= */
   function getDesignById(id){
-    const designs = window.CARD_DATA.designs || [];
-    return designs.find(d => d.id === id) || null;
+    const designs = (window.CARD_DATA.designs || []);
+    return designs.find(x => x.id === id) || null;
   }
 
   function refreshDesignChosenLabel(){
     if(!designChosen) return;
+    const L = t();
     if(!state.designId){
-      designChosen.textContent = "Intet valgt";
+      designChosen.textContent = (L.chosenNone || "Intet valgt");
       return;
     }
     const d = getDesignById(state.designId);
@@ -436,20 +397,22 @@ function applyTexts(){
   function buildDesignTiles(){
     if(!designStrip) return;
 
-    const designs = window.CARD_DATA.designs || [];
+    const designs = (window.CARD_DATA.designs || []);
     designStrip.innerHTML = "";
 
-    designs.forEach(d => {
+    designs.forEach((d) => {
       const tile = document.createElement("div");
       tile.className = "design-tile";
-      tile.dataset.id = d.id;
+      tile.setAttribute("data-id", d.id);
 
-      tile.style.backgroundImage =
-        `linear-gradient(135deg, ${d.a}, ${d.b}, ${d.c || d.a})`;
+      const a = d.a || "#1b2b66";
+      const b = d.b || "#6a4cff";
+      const c = d.c || a;
+      tile.style.backgroundImage = `linear-gradient(135deg, ${a}, ${b}, ${c})`;
 
       const name = document.createElement("div");
       name.className = "name";
-      name.textContent = d.name;
+      name.textContent = d.name || d.id;
 
       const icon = document.createElement("div");
       icon.className = "icon";
@@ -458,9 +421,7 @@ function applyTexts(){
       tile.appendChild(name);
       tile.appendChild(icon);
 
-      if(state.designId === d.id){
-        tile.classList.add("active");
-      }
+      if(state.designId === d.id) tile.classList.add("active");
 
       designStrip.appendChild(tile);
     });
@@ -471,20 +432,13 @@ function applyTexts(){
   function applyDesignToPreview(){
     if(!cardPreview) return;
 
-    const d = getDesignById(state.designId);
+    const d = getDesignById(state.designId) || (window.CARD_DATA.designs || [])[0];
     if(!d) return;
 
-    // === CSS DESIGN-VARIABLER ===
-    cardPreview.style.setProperty("--cardA", d.a);
-    cardPreview.style.setProperty("--cardB", d.b);
+    cardPreview.style.setProperty("--cardA", d.a || "#1b2b66");
+    cardPreview.style.setProperty("--cardB", d.b || "#6a4cff");
 
-    // === DATA ATTRIBUTES (bruges af CSS overlays) ===
-    cardPreview.dataset.type   = state.type || "";
-    cardPreview.dataset.design = state.designId || "";
-
-    if(previewStamp){
-      previewStamp.textContent = d.icon || "✨";
-    }
+    if(previewStamp) previewStamp.textContent = d.icon || "✨";
 
     refreshDesignChosenLabel();
     refreshActionbarEnabled();
@@ -559,7 +513,7 @@ function applyTexts(){
     // background
     const a = d?.a || "#1b2b66";
     const b = d?.b || "#6a4cff";
-    const c3 = d?.c || "#1b2b66";
+    const c3 = d?.c || a;
 
     const g = ctx.createLinearGradient(0,0,W,H);
     g.addColorStop(0, a);
@@ -592,7 +546,7 @@ function applyTexts(){
     ctx.fillText(d?.icon || "✨", W - 150*scale, 132*scale);
 
     const L = t();
-    const toLine   = (state.to||"").trim()   ? `${L.to || "Til"}: ${(state.to||"").trim()}`   : `${L.to || "Til"}: …`;
+    const toLine = (state.to||"").trim() ? `${L.to || "Til"}: ${(state.to||"").trim()}` : `${L.to || "Til"}: …`;
     const fromLine = (state.from||"").trim() ? `${L.from || "Fra"}: ${(state.from||"").trim()}` : `${L.from || "Fra"}: …`;
     const msg = (state.message||"").trim() || "";
 
@@ -629,51 +583,8 @@ function applyTexts(){
     }, "image/png");
   }
 
-  /* PDF: åbn print-side med KUN kortet */
   function printAsPDF(){
-    const canvas = renderCardToCanvas(2);
-    const dataUrl = canvas.toDataURL("image/png");
-
-    const w = window.open("", "_blank");
-    if(!w) return;
-
-    w.document.open();
-    w.document.write(`<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>kisbye-kort</title>
-  <style>
-    @page { margin: 0; }
-    html, body { height: 100%; margin: 0; }
-    body {
-      display: grid;
-      place-items: center;
-      background: #000;
-    }
-    img{
-      width: min(100vw, 820px);
-      height: auto;
-      box-shadow: 0 30px 80px rgba(0,0,0,0.55);
-    }
-    @media print{
-      body{ background: #fff; }
-      img{ width: 100vw; max-width: none; box-shadow:none; }
-    }
-  </style>
-</head>
-<body>
-  <img src="${dataUrl}" alt="kort">
-  <script>
-    window.onload = () => {
-      window.focus();
-      window.print();
-      setTimeout(()=>window.close(), 200);
-    };
-  </script>
-</body>
-</html>`);
-    w.document.close();
+    window.print();
   }
 
   function sendEmail(){
