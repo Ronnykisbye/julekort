@@ -1,18 +1,24 @@
 /* =========================================================
    js/app.js
    Al logik: wizard-flow, state, preview, output (PNG/PDF/email/share)
+   - Ingen frameworks
+   - Matcher 1:1 js/data.js (languages/types/labels/designs/suggestions)
 ========================================================= */
 
 (function(){
   "use strict";
+
+  /* =========================================================
+     AFSNIT 00 – Utils
+  ========================================================= */
   const $ = (id) => document.getElementById(id);
 
-   /* =========================================================
-     AFSNIT 01 – DOM refs
+  /* =========================================================
+     AFSNIT 01 – DOM refs (matcher index.html)
   ========================================================= */
-  const langSelect = $("langSelect");
-  const typeSelect = $("typeSelect");
-  const occasionWrap = $("occasionWrap");
+  const langSelect    = $("langSelect");
+  const typeSelect    = $("typeSelect");
+  const occasionWrap  = $("occasionWrap");
   const occasionInput = $("occasionInput");
 
   const themeLight = $("themeLight");
@@ -24,8 +30,8 @@
   const designStrip  = $("designStrip");
   const designChosen = $("designChosen");
 
-  const fromInput = $("fromInput");
-  const toInput   = $("toInput");
+  const fromInput    = $("fromInput");
+  const toInput      = $("toInput");
   const suggestSelect = $("suggestSelect");
   const messageInput  = $("messageInput");
   const charCount     = $("charCount");
@@ -36,9 +42,7 @@
   const previewFrom    = $("previewFrom");
   const previewMessage = $("previewMessage");
   const cardPreview    = $("cardPreview");
-
-  // NYT: findes i index.html (chip i preview header)
-  const previewMode = $("previewMode");
+  const previewMode    = $("previewMode");
 
   const progressBar = $("progressBar");
   const statusChip  = $("statusChip");
@@ -60,348 +64,398 @@
   const stepBlocks = Array.from(document.querySelectorAll(".card.block"));
 
   /* =========================================================
-   AFSNIT 02 – Data guard (HÅRD validering)
-========================================================= */
-function dataOk(){
-  return (
-    window.CARD_DATA &&
-    Array.isArray(window.CARD_DATA.languages) &&
-    Array.isArray(window.CARD_DATA.types) &&
-    Array.isArray(window.CARD_DATA.designs) &&
-    window.CARD_DATA.texts
-  );
-}
-
-
- /* =========================================================
-   AFSNIT 03 – State + storage
-========================================================= */
-const STORAGE_KEY = "kisbye_julekort_state_v2";
-
-const state = {
-  lang: "da",
-  theme: "dark",
-  type: "xmas",
-  occasion: "",
-  designId: null,
-  from: "",
-  to: "",
-
-  // NYT: messageMode styrer om vi må auto-skifte tekst ved sprogskift
-  // "suggestion" = appen må automatisk skifte tekst når sprog/type ændres
-  // "custom"     = brugeren har skrevet selv, så vi må ikke overskrive
-  message: "",
-  messageMode: "suggestion",
-
-  step: 1
-};
-
-function loadState(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return;
-    const s = JSON.parse(raw);
-    Object.assign(state, s || {});
-  }catch(e){}
-}
-
-function saveState(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
-}
-
-function setMessage(txt, mode){
-  state.message = txt || "";
-  state.messageMode = mode || "suggestion";
-  if(messageInput) messageInput.value = state.message;
-  saveState();
-  refreshPreviewText();
-}
-
- /* =========================================================
-   AFSNIT 04 – i18n helpers (MATCHER data.js)
-========================================================= */
-function t(){
-  const texts = window.CARD_DATA.texts || {};
-  return texts[state.lang] || texts.da || {};
-}
-
-function typeLabel(){
-  const types = window.CARD_DATA.types || [];
-  const t = types.find(x => x.id === state.type);
-  return t ? t.label : state.type;
-}
-
- function initTypeSelect(){
-  typeSelect.innerHTML = "";
-  (window.CARD_DATA.types || []).forEach(tp => {
-    const opt = document.createElement("option");
-    opt.value = tp.id;
-    opt.textContent = tp.label;
-    typeSelect.appendChild(opt);
-  });
-  typeSelect.value = state.type;
-}
-
+     AFSNIT 02 – Data guard (HÅRD validering)
+  ========================================================= */
+  function dataOk(){
+    const D = window.CARD_DATA;
+    return !!(
+      D &&
+      Array.isArray(D.languages) &&
+      Array.isArray(D.types) &&
+      Array.isArray(D.designs) &&
+      D.labels &&
+      D.suggestions
+    );
+  }
 
   /* =========================================================
-   AFSNIT 06 – Tekster (MATCHER data.js)
-========================================================= */
-function applyTexts(){
-  const L = t().ui || {};
+     AFSNIT 03 – State + storage
+  ========================================================= */
+  const STORAGE_KEY = "kisbye_kort_state_v3";
 
-  const set = (id, txt) => {
-    const el = document.getElementById(id);
-    if(el && txt) el.textContent = txt;
+  const state = {
+    lang: "da",
+    theme: "dark",
+    type: "xmas",
+    occasion: "",
+    designId: null,
+    from: "",
+    to: "",
+    message: "",
+    messageMode: "suggestion", // "suggestion" | "custom"
+    step: 1
   };
 
-  set("subtitle", L.subtitle);
-  set("wizardTitle", L.wizardTitle);
-  set("previewTitle", L.previewTitle);
-
-  set("layer1Title", L.layer1Title);
-  set("layer2Title", L.layer2Title);
-  set("layer3Title", L.layer3Title);
-
-  set("lblLang", L.lang);
-  set("lblTheme", L.theme);
-  set("lblType", L.type);
-  set("lblOccasion", L.occasion);
-  set("lblFrom", L.from);
-  set("lblTo", L.to);
-  set("lblSuggestions", L.suggestions);
-  set("lblMessage", L.message);
-
-  set("btnNext1", L.next1);
-  set("btnNext2", L.next2);
-  set("designHint", L.designHint);
-
-  initTypeSelect();
-  refreshOccasionVisibility();
-}
-
-
-/* =========================================================
-   AFSNIT 07 – Wizard (legacy)  [DEAKTIVERET]
-   (Vi bruger KUN setStep i AFSNIT 08)
-========================================================= */
-// NOTE:
-// Du har haft 2 setStep()-funktioner. Det ødelægger flowet.
-// Denne sektion er bevidst tom, så AFSNIT 08 er den ENESTE setStep().
-
-
- /* =========================================================
-   AFSNIT 08 – Wizard / setStep (STABIL + opdaterer altid UI)
-========================================================= */
-function setStep(step){
-  state.step = step;
-  saveState();
-
-  // Aktivér kun det valgte lag
-  stepBlocks.forEach((el) => {
-    const s = parseInt(el.getAttribute("data-step"), 10);
-    el.classList.toggle("active", s === step);
-  });
-
-  // Progressbar + “Vælg lag”-knap
-  if(progressBar){
-    const pct = step === 1 ? 33 : (step === 2 ? 66 : 100);
-    progressBar.style.width = pct + "%";
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      const s = JSON.parse(raw);
+      if(s && typeof s === "object") Object.assign(state, s);
+    }catch(e){}
   }
 
-  // Opdater ALT der kan være afhængigt af sprog/type
-  applyTexts();          // labels/tekster i UI
-  refreshOccasionVisibility();
-  refreshSuggestions();  // <- vigtig: så “Forslag” altid fyldes når du er i tekst
-  refreshPreviewText();  // <- vigtig: så preview altid følger valgt sprog
-
-  // Tilbage-knap
-  if(btnBack) btnBack.hidden = (step <= 1);
-}
-
-
-
-/* =========================================================
-   AFSNIT 09 – Suggestions + Preview + Design (STABIL)
-========================================================= */
-function currentOccasionToken(){
-  const occ = (state.occasion || "").trim();
-  if(occ.length) return occ;
-
-  // Placeholder pr. sprog når feltet er tomt
-  const placeholders = {
-    da: "[ skriv anledning ]",
-    en: "[ write occasion ]",
-    de: "[ Anlass eingeben ]",
-    pl: "[ wpisz okazję ]",
-    lt: "[ įrašyk progą ]"
-  };
-
-  return placeholders[state.lang] || "[ write occasion ]";
-}
-
-function buildSuggestions(){
-  const texts = window.CARD_DATA.texts || {};
-  const langBlock = texts[state.lang] || texts.da || {};
-  const suggestions = langBlock.suggestions || {};
-  const list = suggestions[state.type] || [];
-
-  return list.map(s =>
-    String(s).replaceAll("{occasion}", currentOccasionToken())
-  );
-}
-
-
-function refreshSuggestions(){
-  if(!suggestSelect) return;
-
-  const list = buildSuggestions(state.lang);
-  suggestSelect.innerHTML = "";
-
-  list.forEach((txt, idx) => {
-    const opt = document.createElement("option");
-    opt.value = String(idx);
-    opt.textContent = txt;
-    suggestSelect.appendChild(opt);
-  });
-
-  // Regelsæt:
-  // - suggestion: må auto-skifte ved sprog/type/anledning
-  // - custom: må IKKE overskrives
-  if(state.messageMode !== "custom"){
-    const first = list[0] || "";
-    suggestSelect.value = "0";
-    setMessage(first, "suggestion");
-    return;
+  function saveState(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
   }
 
-  // custom: behold brugerens tekst
-  refreshPreviewText();
-}
+  function setMessage(txt, mode){
+    state.message = String(txt || "");
+    state.messageMode = mode === "custom" ? "custom" : "suggestion";
+    if(messageInput) messageInput.value = state.message;
+    saveState();
+    refreshPreviewText();
+  }
 
-function randomSuggestion(){
-  const list = buildSuggestions(state.lang);
-  if(!list.length) return;
-  const pick = list[Math.floor(Math.random() * list.length)];
-  setMessage(pick, "suggestion");
-}
+  /* =========================================================
+     AFSNIT 04 – i18n helpers (matcher data.js)
+  ========================================================= */
+  function t(){
+    const labels = window.CARD_DATA.labels || {};
+    return labels[state.lang] || labels.da || {};
+  }
 
-/* ---------- Design tiles: bygges fra CARD_DATA.designs ---------- */
-function buildDesignTiles(){
-  if(!designStrip) return;
-  const designs = (window.CARD_DATA.designs || []);
-  designStrip.innerHTML = "";
+  function typeLabel(){
+    const types = (t().types || {});
+    return types[state.type] || state.type;
+  }
 
-  designs.forEach((d) => {
-    const tile = document.createElement("div");
-    tile.className = "design-tile";
-    tile.setAttribute("data-id", d.id);
+  function isSpecialType(){
+    return state.type === "special";
+  }
 
-    // Visuelt preview (gradient)
-    const a = d.a || "#1b2b66";
-    const b = d.b || "#6a4cff";
-    const c = d.c || a;
-    tile.style.backgroundImage = `linear-gradient(135deg, ${a}, ${b}, ${c})`;
+  function currentOccasionToken(){
+    const occ = (state.occasion || "").trim();
+    if(occ) return occ;
 
-    const name = document.createElement("div");
-    name.className = "name";
-    name.textContent = d.name || d.id;
+    const placeholders = {
+      da: "[ skriv anledning ]",
+      en: "[ write occasion ]",
+      de: "[ Anlass eingeben ]",
+      pl: "[ wpisz okazję ]",
+      lt: "[ įrašyk progą ]"
+    };
+    return placeholders[state.lang] || "[ write occasion ]";
+  }
 
-    const icon = document.createElement("div");
-    icon.className = "icon";
-    icon.textContent = d.icon || "✨";
+  /* =========================================================
+     AFSNIT 05 – Init selects
+  ========================================================= */
+  function initLanguageSelect(){
+    if(!langSelect) return;
 
-    tile.appendChild(name);
-    tile.appendChild(icon);
+    langSelect.innerHTML = "";
+    (window.CARD_DATA.languages || []).forEach((l) => {
+      const opt = document.createElement("option");
+      opt.value = l.code;
+      opt.textContent = l.name;
+      langSelect.appendChild(opt);
+    });
 
-    // marker aktiv
-    if(state.designId && state.designId === d.id){
-      tile.classList.add("active");
+    // hvis state.lang ikke findes i listen, fallback til da
+    const exists = (window.CARD_DATA.languages || []).some(x => x.code === state.lang);
+    if(!exists) state.lang = "da";
+
+    langSelect.value = state.lang;
+  }
+
+  function initTypeSelect(){
+    if(!typeSelect) return;
+
+    const typesArr = (window.CARD_DATA.types || []);
+    const labels = (t().types || {});
+
+    typeSelect.innerHTML = "";
+    typesArr.forEach((tp) => {
+      const opt = document.createElement("option");
+      opt.value = tp.id;
+      opt.textContent = labels[tp.id] || labels[tp.key] || tp.id;
+      typeSelect.appendChild(opt);
+    });
+
+    // hvis state.type ikke findes, fallback til xmas
+    const exists = typesArr.some(x => x.id === state.type);
+    if(!exists) state.type = "xmas";
+
+    typeSelect.value = state.type;
+  }
+
+  /* =========================================================
+     AFSNIT 06 – Theme + UI tekster
+  ========================================================= */
+  function applyTheme(){
+    document.documentElement.setAttribute("data-theme", state.theme);
+    if(document.body) document.body.setAttribute("data-theme", state.theme);
+
+    if(themeLight) themeLight.classList.toggle("active", state.theme === "light");
+    if(themeDark)  themeDark.classList.toggle("active",  state.theme === "dark");
+  }
+
+  function applyTexts(){
+    const L = t();
+
+    const setText = (id, txt) => {
+      const el = $(id);
+      if(el) el.textContent = (txt != null ? String(txt) : "");
+    };
+
+    setText("subtitle",     L.subtitle || "");
+    setText("wizardTitle",  L.wizardTitle || "Opsætning");
+    setText("previewTitle", L.previewTitle || "Live preview");
+
+    setText("layer1Title",  L.layer1Title || "Lag 1");
+    setText("layer2Title",  L.layer2Title || "Lag 2");
+    setText("layer3Title",  L.layer3Title || "Lag 3");
+
+    setText("lblLang",       L.lang || "Sprog");
+    setText("lblTheme",      L.theme || "Tema");
+    setText("lblType",       L.type || "Korttype");
+    setText("lblOccasion",   L.occasion || "Anledning");
+    setText("lblFrom",       L.from || "Fra");
+    setText("lblTo",         L.to || "Til");
+    setText("lblSuggestions",L.suggestions || "Forslag");
+    setText("lblMessage",    L.message || "Din tekst");
+
+    setText("btnNext1",   L.next1 || "Vælg design");
+    setText("btnNext2",   L.next2 || "Skriv teksten");
+    setText("designHint", L.designHint || "Swipe/scroll – klik for at vælge.");
+
+    // help
+    if(helpList){
+      helpList.innerHTML = "";
+      (L.help || []).forEach((line) => {
+        const li = document.createElement("li");
+        li.textContent = line;
+        helpList.appendChild(li);
+      });
     }
 
-    designStrip.appendChild(tile);
-  });
+    // re-init type labels når sprog ændres
+    initTypeSelect();
 
-  // chip-tekst i step 2
-  refreshDesignChosenLabel();
-}
-
-function getDesignById(id){
-  const designs = (window.CARD_DATA.designs || []);
-  return designs.find(x => x.id === id) || null;
-}
-
-function refreshDesignChosenLabel(){
-  if(!designChosen) return;
-  if(!state.designId){
-    designChosen.textContent = "Intet valgt";
-    return;
+    // status + chosen chip
+    refreshStatus();
+    refreshDesignChosenLabel();
   }
-  const d = getDesignById(state.designId);
-  designChosen.textContent = d?.name || state.designId;
-}
-
-/* ---------- Påfør design til preview (CSS vars + ikon) ---------- */
-function applyDesignToPreview(){
-  if(!cardPreview) return;
-
-  const d = getDesignById(state.designId) || (window.CARD_DATA.designs || [])[0];
-  if(!d) return;
-
-  // Sæt CSS variabler på preview-kortet
-  cardPreview.style.setProperty("--cardA", d.a || "#1b2b66");
-  cardPreview.style.setProperty("--cardB", d.b || "#6a4cff");
-
-  // Stamp ikon i preview
-  if(previewStamp) previewStamp.textContent = d.icon || "✨";
-
-  refreshDesignChosenLabel();
-  refreshActionbarEnabled();
-}
-
-/* ---------- Statuschips (wizard + preview) ---------- */
-function refreshStatus(){
-  if(statusChip){
-    const L = t();
-    const stepTxt = (state.step === 1) ? (L.layer1Title || "Lag 1")
-                  : (state.step === 2) ? (L.layer2Title || "Lag 2")
-                  : (L.layer3Title || "Lag 3");
-    statusChip.textContent = `Vælg ${stepTxt}`;
-  }
-
-  if(previewMode){
-    const mode = state.messageMode === "custom" ? "Din tekst" : "Forslag";
-    previewMode.textContent = mode;
-  }
-}
-
-function refreshPreviewText(){
-  // Badge: vis kun korttypen (anledning bruges kun inde i selve forslagsteksterne)
-  if(previewBadge) previewBadge.textContent = typeLabel();
-
-  const L = t();
-  const to = (state.to || "").trim();
-  const from = (state.from || "").trim();
-  const msg = (state.message || "").trim();
-
-  if(previewTo) previewTo.textContent = to ? `${L.to || "Til"}: ${to}` : `${L.to || "Til"}: …`;
-  if(previewFrom) previewFrom.textContent = from ? `${L.from || "Fra"}: ${from}` : `${L.from || "Fra"}: …`;
-
-  if(previewMessage){
-    if(msg) previewMessage.textContent = msg;
-    else previewMessage.textContent = state.designId
-      ? (L.writeYourText || "Skriv din tekst…")
-      : (L.pickDesignFirst || "Vælg et design og skriv din tekst…");
-  }
-
-  if(charCount && messageInput) charCount.textContent = String((messageInput.value || "").length);
-
-  refreshStatus();
-  refreshActionbarEnabled();
-}
-
 
   /* =========================================================
-     AFSNIT 10 – Output (PNG / PDF / Email / Share)
+     AFSNIT 07 – Special / Anledning visibility
+  ========================================================= */
+  function refreshOccasionVisibility(){
+    const show = isSpecialType();
+    if(occasionWrap) occasionWrap.hidden = !show;
+
+    if(!show){
+      // må ikke påvirke andre typer
+      state.occasion = "";
+      if(occasionInput) occasionInput.value = "";
+      saveState();
+    }
+  }
+
+  /* =========================================================
+     AFSNIT 08 – Wizard / setStep
+  ========================================================= */
+  function setStep(step){
+    const s = Math.max(1, Math.min(3, parseInt(step, 10) || 1));
+    state.step = s;
+    saveState();
+
+    stepBlocks.forEach((el) => {
+      const n = parseInt(el.getAttribute("data-step"), 10);
+      el.classList.toggle("active", n === s);
+    });
+
+    if(progressBar){
+      const pct = (s === 1 ? 33 : (s === 2 ? 66 : 100));
+      progressBar.style.width = pct + "%";
+    }
+
+    if(btnBack) btnBack.hidden = (s <= 1);
+
+    refreshStatus();
+
+    // vigtig: lag 3 skal altid have forslag fyldt
+    if(s === 3) refreshSuggestions();
+    refreshPreviewText();
+  }
+
+  function refreshStatus(){
+    const L = t();
+    if(statusChip){
+      statusChip.textContent =
+        (state.step === 1 ? (L.status1 || "Vælg Lag 1") :
+         state.step === 2 ? (L.status2 || "Vælg design") :
+                            (L.status3 || "Skriv tekst"));
+    }
+
+    if(previewMode){
+      previewMode.textContent = (state.messageMode === "custom" ? "Din tekst" : "Forslag");
+    }
+  }
+
+  /* =========================================================
+     AFSNIT 09 – Suggestions + Preview
+  ========================================================= */
+  function buildSuggestions(){
+    const S = window.CARD_DATA.suggestions || {};
+    const langBlock = S[state.lang] || S.da || {};
+    const list = langBlock[state.type] || [];
+
+    return (list || []).map((s) =>
+      String(s || "").replaceAll("{occasion}", currentOccasionToken())
+    );
+  }
+
+  function refreshSuggestions(){
+    if(!suggestSelect) return;
+
+    const list = buildSuggestions();
+    suggestSelect.innerHTML = "";
+
+    list.forEach((txt, idx) => {
+      const opt = document.createElement("option");
+      opt.value = String(idx);
+      opt.textContent = txt;
+      suggestSelect.appendChild(opt);
+    });
+
+    // regelsæt:
+    // suggestion -> auto skift til første forslag ved sprog/type/occasion
+    // custom     -> behold brugerens tekst
+    if(state.messageMode !== "custom"){
+      const first = list[0] || "";
+      suggestSelect.value = "0";
+      setMessage(first, "suggestion");
+      return;
+    }
+
+    refreshPreviewText();
+  }
+
+  function randomSuggestion(){
+    const list = buildSuggestions();
+    if(!list.length) return;
+    const pick = list[Math.floor(Math.random() * list.length)];
+    setMessage(pick, "suggestion");
+  }
+
+  function refreshPreviewText(){
+    const L = t();
+
+    if(previewBadge) previewBadge.textContent = typeLabel();
+
+    const to = (state.to || "").trim();
+    const from = (state.from || "").trim();
+    const msg = (state.message || "").trim();
+
+    if(previewTo)   previewTo.textContent   = `${L.to || "Til"}: ${to || "…"}`;
+    if(previewFrom) previewFrom.textContent = `${L.from || "Fra"}: ${from || "…"}`;
+
+    if(previewMessage){
+      if(msg) previewMessage.textContent = msg;
+      else previewMessage.textContent = state.designId
+        ? (L.messagePlaceholder || "Skriv din tekst her...")
+        : (L.pickDesignFirst || "Vælg et design og skriv din tekst…");
+    }
+
+    if(charCount && messageInput) charCount.textContent = String((messageInput.value || "").length);
+
+    refreshStatus();
+    refreshActionbarEnabled();
+  }
+
+  /* =========================================================
+     AFSNIT 10 – Design tiles + apply
+  ========================================================= */
+  function getDesignById(id){
+    const designs = (window.CARD_DATA.designs || []);
+    return designs.find(x => x.id === id) || null;
+  }
+
+  function refreshDesignChosenLabel(){
+    if(!designChosen) return;
+    const L = t();
+    if(!state.designId){
+      designChosen.textContent = (L.chosenNone || "Intet valgt");
+      return;
+    }
+    const d = getDesignById(state.designId);
+    designChosen.textContent = d ? d.name : state.designId;
+  }
+
+  function buildDesignTiles(){
+    if(!designStrip) return;
+
+    const designs = (window.CARD_DATA.designs || []);
+    designStrip.innerHTML = "";
+
+    designs.forEach((d) => {
+      const tile = document.createElement("div");
+      tile.className = "design-tile";
+      tile.setAttribute("data-id", d.id);
+
+      const a = d.a || "#1b2b66";
+      const b = d.b || "#6a4cff";
+      const c = d.c || a;
+      tile.style.backgroundImage = `linear-gradient(135deg, ${a}, ${b}, ${c})`;
+
+      const name = document.createElement("div");
+      name.className = "name";
+      name.textContent = d.name || d.id;
+
+      const icon = document.createElement("div");
+      icon.className = "icon";
+      icon.textContent = d.icon || "✨";
+
+      tile.appendChild(name);
+      tile.appendChild(icon);
+
+      if(state.designId === d.id) tile.classList.add("active");
+
+      designStrip.appendChild(tile);
+    });
+
+    refreshDesignChosenLabel();
+  }
+
+  function applyDesignToPreview(){
+    if(!cardPreview) return;
+
+    const d = getDesignById(state.designId) || (window.CARD_DATA.designs || [])[0];
+    if(!d) return;
+
+    cardPreview.style.setProperty("--cardA", d.a || "#1b2b66");
+    cardPreview.style.setProperty("--cardB", d.b || "#6a4cff");
+
+    if(previewStamp) previewStamp.textContent = d.icon || "✨";
+
+    refreshDesignChosenLabel();
+    refreshActionbarEnabled();
+  }
+
+  /* =========================================================
+     AFSNIT 11 – Actionbar enable/disable
+  ========================================================= */
+  function refreshActionbarEnabled(){
+    const ready = !!state.designId && ((state.message || "").trim().length > 0);
+    [btnPng, btnPdf, btnMail, btnShare].forEach((btn) => {
+      if(btn) btn.disabled = !ready;
+    });
+  }
+
+  /* =========================================================
+     AFSNIT 12 – Output (PNG / PDF / Email / Share)
   ========================================================= */
   function getActiveDesign(){
     const designs = (window.CARD_DATA.designs || []);
@@ -459,7 +513,7 @@ function refreshPreviewText(){
     // background
     const a = d?.a || "#1b2b66";
     const b = d?.b || "#6a4cff";
-    const c3 = d?.c || "#1b2b66";
+    const c3 = d?.c || a;
 
     const g = ctx.createLinearGradient(0,0,W,H);
     g.addColorStop(0, a);
@@ -567,198 +621,186 @@ function refreshPreviewText(){
     }catch(e){}
   }
 
-/* =========================================================
-   AFSNIT 11 – Events / bruger-interaktion (STABIL)
-========================================================= */
-function bindEvents(){
+  /* =========================================================
+     AFSNIT 13 – Events
+  ========================================================= */
+  function bindEvents(){
+    // Sprog
+    if(langSelect){
+      langSelect.addEventListener("change", () => {
+        state.lang = langSelect.value;
+        saveState();
 
-  /* ---------- Sprog ---------- */
-  if(langSelect){
-    langSelect.addEventListener("change", () => {
-      state.lang = langSelect.value;
-      saveState();
+        applyTexts();
+        refreshOccasionVisibility();
 
-      applyTexts();
-      refreshOccasionVisibility();
+        // suggestion-mode: tekst følger sprog/type
+        if(state.messageMode !== "custom"){
+          refreshSuggestions();
+        }
 
-      // Hvis brugeren ikke har skrevet selv, skal teksten følge sprog/type
-      if(state.messageMode !== "custom"){
-        refreshSuggestions();
-      }
+        refreshPreviewText();
+      });
+    }
 
-      refreshPreviewText();
-    });
+    // Tema
+    if(themeLight){
+      themeLight.addEventListener("click", () => {
+        state.theme = "light";
+        saveState();
+        applyTheme();
+      });
+    }
+    if(themeDark){
+      themeDark.addEventListener("click", () => {
+        state.theme = "dark";
+        saveState();
+        applyTheme();
+      });
+    }
+
+    // Korttype
+    if(typeSelect){
+      typeSelect.addEventListener("change", () => {
+        state.type = typeSelect.value;
+        saveState();
+
+        refreshOccasionVisibility();
+
+        if(state.messageMode !== "custom"){
+          refreshSuggestions();
+        }
+
+        refreshPreviewText();
+      });
+    }
+
+    // Anledning (kun special)
+    if(occasionInput){
+      occasionInput.addEventListener("input", () => {
+        state.occasion = occasionInput.value;
+        saveState();
+
+        if(state.messageMode !== "custom"){
+          refreshSuggestions();
+        }
+
+        refreshPreviewText();
+      });
+    }
+
+    // Navigation
+    if(toStep2) toStep2.addEventListener("click", () => setStep(2));
+    if(toStep3) toStep3.addEventListener("click", () => setStep(3));
+    if(btnBack){
+      btnBack.addEventListener("click", () => setStep(state.step - 1));
+    }
+
+    // Design (delegation)
+    if(designStrip){
+      designStrip.addEventListener("click", (e) => {
+        const tile = e.target.closest(".design-tile");
+        if(!tile) return;
+
+        const id = tile.getAttribute("data-id");
+        if(!id) return;
+
+        state.designId = id;
+        saveState();
+
+        // mark active
+        document.querySelectorAll(".design-tile").forEach((tEl) => {
+          tEl.classList.toggle("active", tEl.getAttribute("data-id") === id);
+        });
+
+        if(toStep3) toStep3.disabled = false;
+
+        applyDesignToPreview();
+        refreshPreviewText();
+
+        // hop til lag 3
+        setStep(3);
+      });
+    }
+
+    // Forslag dropdown
+    if(suggestSelect){
+      suggestSelect.addEventListener("change", () => {
+        const idx = parseInt(suggestSelect.value, 10);
+        const list = buildSuggestions();
+        const picked = list[idx] || list[0] || "";
+        setMessage(picked, "suggestion");
+      });
+    }
+
+    if(btnRandom){
+      btnRandom.addEventListener("click", () => randomSuggestion());
+    }
+
+    // Fri tekst
+    if(messageInput){
+      messageInput.addEventListener("input", () => {
+        state.message = messageInput.value;
+        state.messageMode = "custom";
+        saveState();
+        refreshPreviewText();
+      });
+    }
+
+    // Fra / Til
+    if(fromInput){
+      fromInput.addEventListener("input", () => {
+        state.from = fromInput.value;
+        saveState();
+        refreshPreviewText();
+      });
+    }
+    if(toInput){
+      toInput.addEventListener("input", () => {
+        state.to = toInput.value;
+        saveState();
+        refreshPreviewText();
+      });
+    }
+
+    // Output
+    if(btnPng)   btnPng.addEventListener("click", downloadPNG);
+    if(btnPdf)   btnPdf.addEventListener("click", printAsPDF);
+    if(btnMail)  btnMail.addEventListener("click", sendEmail);
+    if(btnShare) btnShare.addEventListener("click", shareCard);
+
+    // Reset
+    if(btnReset){
+      btnReset.addEventListener("click", () => {
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+      });
+    }
+
+    // Help
+    if(btnHelp){
+      btnHelp.addEventListener("click", () => {
+        if(helpModal) helpModal.hidden = false;
+      });
+    }
+    if(btnCloseHelp){
+      btnCloseHelp.addEventListener("click", () => {
+        if(helpModal) helpModal.hidden = true;
+      });
+    }
+    if(helpModal){
+      helpModal.addEventListener("click", (e) => {
+        if(e.target && e.target.classList && e.target.classList.contains("modal-backdrop")){
+          helpModal.hidden = true;
+        }
+      });
+    }
   }
 
-  /* ---------- Tema ---------- */
-  if(themeLight){
-    themeLight.addEventListener("click", () => {
-      state.theme = "light";
-      saveState();
-      applyTheme();
-    });
-  }
-  if(themeDark){
-    themeDark.addEventListener("click", () => {
-      state.theme = "dark";
-      saveState();
-      applyTheme();
-    });
-  }
-
-  /* ---------- Korttype ---------- */
-  if(typeSelect){
-    typeSelect.addEventListener("change", () => {
-      state.type = typeSelect.value;
-      saveState();
-
-      refreshOccasionVisibility();
-
-      // Ved type-skift: hvis tekst er forslag, opdater den
-      if(state.messageMode !== "custom"){
-        refreshSuggestions();
-      }
-
-      refreshPreviewText();
-    });
-  }
-
-  /* ---------- Anledning ---------- */
-  if(occasionInput){
-    occasionInput.addEventListener("input", () => {
-      state.occasion = occasionInput.value;
-      saveState();
-
-      // Opdater forslag hvis vi er i suggestion-mode
-      if(state.messageMode !== "custom"){
-        refreshSuggestions();
-      }
-
-      refreshPreviewText();
-    });
-  }
-
-  /* ---------- Navigation ---------- */
-  if(toStep2) toStep2.addEventListener("click", () => setStep(2));
-  if(toStep3) toStep3.addEventListener("click", () => setStep(3));
-
-  if(btnBack){
-    btnBack.addEventListener("click", () => {
-      setStep(Math.max(1, state.step - 1));
-    });
-  }
-
-  /* ---------- Design (delegation – virker altid) ---------- */
-  if(designStrip){
-    designStrip.addEventListener("click", (e) => {
-      const tile = e.target.closest(".design-tile");
-      if(!tile) return;
-
-      const id = tile.getAttribute("data-id");
-      if(!id) return;
-
-      // Gem valgt design
-      state.designId = id;
-      saveState();
-
-      // Markér aktiv tile
-      document.querySelectorAll(".design-tile").forEach(t =>
-        t.classList.toggle("active", t.getAttribute("data-id") === id)
-      );
-
-      // UI-status (Intet valgt -> valgt)
-      if(designChosen) designChosen.textContent = id;
-      if(toStep3) toStep3.disabled = false;
-
-      // Opdater preview-design + tekst
-      applyDesignToPreview();
-      refreshPreviewText();
-
-      // Hop til tekst
-      setStep(3);
-    });
-  }
-
-  /* ---------- Forslag (dropdown) ---------- */
-  if(suggestSelect){
-    suggestSelect.addEventListener("change", () => {
-      const idx = parseInt(suggestSelect.value, 10);
-      const list = buildSuggestions(state.lang);
-      const picked = list[idx] || list[0] || "";
-      setMessage(picked, "suggestion");
-    });
-  }
-
-  if(btnRandom){
-    btnRandom.addEventListener("click", () => {
-      randomSuggestion();
-    });
-  }
-
-  /* ---------- Fri tekst ---------- */
-  if(messageInput){
-    messageInput.addEventListener("input", () => {
-      state.message = messageInput.value;
-      state.messageMode = "custom";
-      saveState();
-      refreshPreviewText();
-    });
-  }
-
-  /* ---------- Fra / Til ---------- */
-  if(fromInput){
-    fromInput.addEventListener("input", () => {
-      state.from = fromInput.value;
-      saveState();
-      refreshPreviewText();
-    });
-  }
-
-  if(toInput){
-    toInput.addEventListener("input", () => {
-      state.to = toInput.value;
-      saveState();
-      refreshPreviewText();
-    });
-  }
-
-  /* ---------- Output ---------- */
-  if(btnPng)  btnPng.addEventListener("click", downloadPNG);
-  if(btnPdf)  btnPdf.addEventListener("click", printAsPDF);
-  if(btnMail) btnMail.addEventListener("click", sendEmail);
-  if(btnShare)btnShare.addEventListener("click", shareCard);
-
-  /* ---------- Reset ---------- */
-  if(btnReset){
-    btnReset.addEventListener("click", () => {
-      localStorage.removeItem(STORAGE_KEY);
-      location.reload();
-    });
-  }
-
-  /* ---------- Hjælp ---------- */
-  if(btnHelp){
-    btnHelp.addEventListener("click", () => {
-      if(helpModal) helpModal.hidden = false;
-    });
-  }
-  if(btnCloseHelp){
-    btnCloseHelp.addEventListener("click", () => {
-      if(helpModal) helpModal.hidden = true;
-    });
-  }
-  if(helpModal){
-    helpModal.addEventListener("click", (e) => {
-      if(e.target.classList.contains("modal-backdrop")) helpModal.hidden = true;
-    });
-  }
-}
-
-   /* =========================================================
-     AFSNIT 12 – Restore UI + Boot
+  /* =========================================================
+     AFSNIT 14 – Restore UI + Boot
   ========================================================= */
   function restoreUI(){
-    // 1) Dropdowns / inputs
     if(langSelect) langSelect.value = state.lang;
     if(typeSelect) typeSelect.value = state.type;
 
@@ -766,14 +808,12 @@ function bindEvents(){
     refreshOccasionVisibility();
 
     if(fromInput) fromInput.value = state.from || "";
-    if(toInput)   toInput.value = state.to || "";
+    if(toInput)   toInput.value   = state.to   || "";
     if(messageInput) messageInput.value = state.message || "";
 
-    // 2) Tema + tekster
     applyTheme();
     applyTexts();
 
-    // 3) Designs
     buildDesignTiles();
 
     if(state.designId){
@@ -783,25 +823,37 @@ function bindEvents(){
       if(toStep3) toStep3.disabled = true;
     }
 
-    // 4) Forslag + preview (respekter messageMode)
-    refreshSuggestions();
-    refreshPreviewText();
+    // suggestion-mode: sørg for der altid står noget
+    if(state.messageMode !== "custom"){
+      refreshSuggestions();
+    } else {
+      refreshPreviewText();
+    }
+
+    refreshActionbarEnabled();
   }
 
   function boot(){
     if(!dataOk()){
-      console.error("CARD_DATA mangler. Tjek js/data.js");
+      console.error("CARD_DATA mangler/ugyldig. Tjek js/data.js");
       return;
     }
 
     loadState();
+
+    // init UI
     initLanguageSelect();
+    initTypeSelect();
     applyTheme();
     bindEvents();
+
+    // build + restore
     restoreUI();
 
-    // Start stabilt i lag 1 (som du ønskede)
+    // start i lag 1
     setStep(1);
   }
 
   boot();
+
+})();
