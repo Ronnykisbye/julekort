@@ -351,11 +351,9 @@ function randomSuggestion(){
 }
 
 function refreshPreviewText(){
-  // Badge: vis også anledning ved "special"
-  if(previewBadge){
-    const base = typeLabel();
-    previewBadge.textContent = isSpecialType() ? `${base}: ${currentOccasionToken()}` : base;
-  }
+ // Badge: vis kun korttypen (anledning bruges kun inde i selve forslagsteksterne)
+if(previewBadge) previewBadge.textContent = typeLabel();
+
 
   const L = t();
   const to = (state.to || "").trim();
