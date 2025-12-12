@@ -1,433 +1,492 @@
 /* =========================================================
-   AFSNIT 01 – Base layout
+   ui.css
+   Layout, knapper, wizard, preview, animationer
+========================================================= */
+
+
+/* =========================================================
+   AFSNIT 01 – Reset / Base
+========================================================= */
+*{ box-sizing: border-box; }
+html, body{ height:100%; margin:0; }
+body{
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  color: var(--text);
+}
+
+a{ color: inherit; }
+button, input, select, textarea{
+  font: inherit;
+}
+
+/* små, rolige transitions */
+:root{
+  --gap: 18px;
+  --radius: 18px;
+}
+
+
+/* =========================================================
+   AFSNIT 02 – App layout
 ========================================================= */
 .app{
   max-width: 1200px;
   margin: 0 auto;
-  padding: 14px 14px 92px;
+  padding: 18px 18px 84px; /* plads til actionbar */
 }
 
+.grid{
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: var(--gap);
+}
+
+@media (max-width: 980px){
+  .grid{
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   AFSNIT 03 – Topbar
+========================================================= */
 .topbar{
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  padding: 10px 10px 14px;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
-.brand{ display:flex; align-items:center; gap:12px; }
+.brand{
+  display:flex;
+  gap: 12px;
+  align-items:center;
+}
+
 .logo{
-  width:42px; height:42px; border-radius:14px;
-  display:grid; place-items:center;
-  background: linear-gradient(135deg, rgba(139,247,255,0.25), rgba(215,169,255,0.18));
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.06);
   border: 1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:center;
   box-shadow: var(--shadow);
 }
-.title{ font-weight: 800; letter-spacing: 0.2px; }
-.subtitle{ color: var(--muted); font-size: 13px; margin-top:2px; }
+
+.title{
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+
+.subtitle{
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
 
 .pill{
-  border:1px solid var(--border);
-  background: var(--panel);
-  color: var(--text);
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
-  padding: 8px 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
   cursor:pointer;
-  transition: transform .12s ease, background .12s ease;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.20);
 }
-.pill:active{ transform: translateY(1px) scale(0.99); }
+.pill:hover{ filter: brightness(1.06); }
+
 
 /* =========================================================
-   AFSNIT 02 – Grid / panels
+   AFSNIT 04 – Panels / Cards
 ========================================================= */
-.grid{
-  display:grid;
-  grid-template-columns: 1.08fr 0.92fr;
-  gap: 14px;
-}
-@media (max-width: 980px){
-  .grid{ grid-template-columns: 1fr; }
-}
-
 .panel{
-  background: var(--panel);
+  border-radius: 22px;
+  background: rgba(255,255,255,0.04);
   border: 1px solid var(--border);
-  border-radius: var(--radius2);
   box-shadow: var(--shadow);
-  overflow:hidden;
+  overflow: hidden;
 }
 
 .panel-head{
   padding: 14px 14px 10px;
-  border-bottom: 1px solid var(--border);
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.panel h2{
+.panel-head h2{
   margin:0;
-  font-size: 16px;
-  letter-spacing: 0.2px;
+  font-size: 18px;
+  letter-spacing: .2px;
 }
 
-/* =========================================================
-   AFSNIT 03 – Progress bar
-========================================================= */
-.progress{
-  flex:1;
-  height: 10px;
-  max-width: 240px;
-  background: rgba(255,255,255,0.06);
+.wizard{ padding-bottom: 8px; }
+.preview{ padding-bottom: 12px; }
+
+.card{
+  margin: 14px;
+  border-radius: 18px;
   border: 1px solid var(--border);
-  border-radius: 999px;
-  overflow:hidden;
-}
-.progress-bar{
-  height:100%;
-  width: 0%;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
-  box-shadow: 0 0 22px rgba(139,247,255,0.35);
-  transition: width .22s ease;
+  background: rgba(255,255,255,0.04);
+  overflow: hidden;
 }
 
-/* =========================================================
-   AFSNIT 04 – Wizard blocks + COLLAPSE (NYT)
-========================================================= */
-.card.block{
+.block{
   padding: 14px;
-  border-bottom: 1px solid var(--border);
-  transition: opacity .18s ease, transform .18s ease;
 }
 
 .block-head{
   display:flex;
   align-items:center;
-  justify-content:space-between;
+  justify-content: space-between;
   gap: 10px;
   margin-bottom: 10px;
-  cursor: pointer; /* klik på header for at åbne laget */
+}
+
+.block-title{
+  font-weight: 700;
+  letter-spacing: .2px;
 }
 
 .step-badge{
   font-size: 12px;
   color: var(--muted);
-  border: 1px solid var(--border);
-  background: var(--panel2);
-  border-radius: 999px;
-  padding: 5px 10px;
-}
-
-.block-title{
-  font-weight: 750;
-  letter-spacing: 0.2px;
-}
-
-/* Aktivt lag får lidt “lift” */
-.block.is-active{
-  box-shadow: 0 0 30px rgba(139,247,255,0.12);
-}
-
-/* Minimeret lag: skjul indhold men behold header */
-.block.is-collapsed{
-  opacity: 0.75;
-}
-.block.is-collapsed .row,
-.block.is-collapsed .design-strip,
-.block.is-collapsed .mini-row,
-.block.is-collapsed .field,
-.block.is-collapsed .primary.next,
-.block.is-collapsed textarea,
-.block.is-collapsed select,
-.block.is-collapsed input{
-  display:none !important;
-}
-
-/* Vis en lille “åbn” hint på collapsed lag */
-.block.is-collapsed .block-head::after{
-  content: " (klik for at åbne)";
-  color: var(--muted2);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-/* =========================================================
-   AFSNIT 05 – Menuer, knapper og tekst (LÆSEligt i dark mode)
-========================================================= */
-
-/* Labels / overskrifter */
-.label,
-.block-title,
-.step-badge,
-.hint,
-.chip,
-.panel-head h2{
-  color: var(--text);
-}
-
-/* Select, input, textarea */
-select,
-input,
-textarea{
-  background: var(--fieldBg);
-  color: var(--fieldText);
-  border: 1px solid var(--fieldBorder);
-}
-
-/* Dropdown options (vigtigt i dark mode) */
-select option{
-  background: #0b1220;
-  color: #ffffff;
-}
-
-/* Buttons generelt */
-button{
-  color: var(--text);
-}
-
-/* Segmented (Light / Dark) */
-.segmented .seg{
-  background: var(--panel2);
-  color: var(--text);
-  border: 1px solid var(--border);
-}
-
-.segmented .seg.active{
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: #081018;
-}
-
-/* Hover / focus – men teksten skal ALTID være synlig */
-select:hover,
-input:hover,
-textarea:hover,
-button:hover{
-  color: var(--text);
-}
-
-
-/* =========================================================
-   AFSNIT 06 – Segmented buttons (Light/Dark)
-========================================================= */
-.segmented{ display:flex; gap: 8px; }
-.seg{
-  flex:1;
-  border-radius: 14px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,0.06);
-  color: var(--text);
-  padding: 10px 12px;
-  cursor:pointer;
-  transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
-}
-.seg.active{
-  background: linear-gradient(135deg, rgba(139,247,255,0.22), rgba(215,169,255,0.18));
-  box-shadow: 0 0 26px rgba(139,247,255,0.18);
-}
-.seg:active{ transform: translateY(1px); }
-
-/* =========================================================
-   AFSNIT 07 – Primary buttons
-========================================================= */
-.primary{
-  width:100%;
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 18px;
-  padding: 12px 14px;
-  margin-top: 12px;
-  cursor:pointer;
-  color: var(--text);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)),
-    linear-gradient(90deg, rgba(139,247,255,0.25), rgba(215,169,255,0.18));
-  box-shadow:
-    0 10px 25px rgba(0,0,0,0.25),
-    0 0 28px rgba(139,247,255,0.12);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  font-weight: 750;
-}
-.primary:disabled{
-  opacity: .55;
-  cursor:not-allowed;
-  box-shadow:none;
-}
-.primary:active{ transform: translateY(1px); }
-.chev{ opacity: .9; }
-
-/* =========================================================
-   AFSNIT 08 – Design strip
-========================================================= */
-.design-strip{
-  display:flex;
-  gap: 10px;
-  overflow-x:auto;
-  padding: 8px 2px 10px;
-  scroll-snap-type: x mandatory;
-}
-.design-strip::-webkit-scrollbar{ height: 10px; }
-.design-strip::-webkit-scrollbar-thumb{
-  background: rgba(255,255,255,0.14);
-  border-radius: 999px;
-}
-
-.design-tile{
-  flex: 0 0 160px;
-  height: 110px;
-  border-radius: 18px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.06);
-  position:relative;
-  cursor:pointer;
-  scroll-snap-align: start;
-  overflow:hidden;
-  box-shadow: 0 12px 26px rgba(0,0,0,0.25);
-  transform: translateZ(0);
-  transition: transform .12s ease, box-shadow .12s ease;
-}
-.design-tile:hover{ transform: translateY(-1px); }
-.design-tile.active{
-  outline: 2px solid rgba(139,247,255,0.55);
-  box-shadow: 0 0 28px rgba(139,247,255,0.20);
-}
-.design-tile .name{
-  position:absolute;
-  left:10px; bottom:10px;
-  font-weight: 800;
-  font-size: 12px;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.55);
-}
-.design-tile .icon{
-  position:absolute;
-  right:10px; top:10px;
-  font-size: 18px;
-  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.45));
-}
-
-.mini-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap: 10px;
-  margin-top: 10px;
-}
-.hint{ color: var(--muted); font-size: 12px; }
-.chip{
-  border: 1px solid var(--border);
-  background: var(--panel2);
-  border-radius: 999px;
   padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+}
+
+
+/* =========================================================
+   AFSNIT 05 – Formfelter (læsbare i dark/light)
+========================================================= */
+.row{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 560px){
+  .row{ grid-template-columns: 1fr; }
+}
+
+.field{
+  display:flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label{
   font-size: 12px;
   color: var(--muted);
 }
 
-.ghost{
+select, input, textarea{
+  width:100%;
+  border-radius: 12px;
+  border: 1px solid var(--fieldBorder);
+  background: var(--fieldBg);
+  color: var(--fieldText);
+  padding: 9px 11px;
+  outline: none;
+}
+
+/* dropdown-listen */
+select option{
+  background: #0b1220;
+  color: #ffd34d;
+}
+
+html[data-theme="light"] select option,
+body[data-theme="light"] select option{
+  background: #ffffff;
+  color: rgba(10,16,26,0.92);
+}
+
+select:focus, input:focus, textarea:focus{
+  box-shadow: 0 0 0 3px rgba(139,247,255,0.18);
+  border-color: rgba(139,247,255,0.45);
+}
+
+textarea{
+  resize: none;
+  min-height: 110px;
+  line-height: 1.25;
+}
+
+.counter{
+  font-size: 12px;
+  color: var(--muted2);
+  margin-top: 6px;
+}
+
+
+/* =========================================================
+   AFSNIT 06 – Segmented buttons (Light/Dark) – KOMPAKT
+========================================================= */
+.segmented{
+  display:inline-flex;
+  gap: 8px;
+  align-items:center;
+}
+
+.seg{
+  flex: 0 0 auto;
+  border-radius: 999px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.06);
   color: var(--text);
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1;
+  cursor:pointer;
+  transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+}
+
+.seg.active{
+  background: rgba(139,247,255,0.18);
+  border-color: rgba(139,247,255,0.45);
+  box-shadow: 0 0 18px rgba(139,247,255,0.14);
+}
+
+.seg:active{ transform: translateY(1px); }
+
+
+/* =========================================================
+   AFSNIT 07 – Buttons (primær/ghost)
+========================================================= */
+.primary{
+  width:100%;
+  margin-top: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: linear-gradient(135deg, rgba(139,247,255,0.18), rgba(215,169,255,0.14));
+  color: var(--text);
+  padding: 12px 14px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.20);
+}
+
+.primary:hover{ filter: brightness(1.04); }
+.primary:disabled{ opacity: .45; cursor:not-allowed; }
+
+.chev{
+  font-size: 18px;
+  opacity: .85;
+}
+
+.ghost{
+  width:100%;
   border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
   padding: 10px 12px;
   cursor:pointer;
 }
-.ghost:active{ transform: translateY(1px); }
+.ghost:hover{ filter: brightness(1.06); }
+
 
 /* =========================================================
-   AFSNIT 09 – Preview card
+   AFSNIT 08 – Progress + chips
 ========================================================= */
-.preview-wrap{ padding: 14px; }
+.progress{
+  flex: 1 1 auto;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  overflow:hidden;
+  max-width: 340px;
+}
+
+.progress-bar{
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(139,247,255,0.70), rgba(215,169,255,0.70));
+  transition: width .18s ease;
+}
+
+.chip{
+  font-size: 12px;
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+}
+
+
+/* =========================================================
+   AFSNIT 09 – Wizard: vis kun aktivt lag (én gang)
+========================================================= */
+.card.block{ display:none; }
+.card.block.active{ display:block; animation: stepIn .16s ease-out; }
+
+@keyframes stepIn{
+  from{ opacity:0; transform: translateY(6px); }
+  to{ opacity:1; transform: translateY(0); }
+}
+
+
+/* =========================================================
+   AFSNIT 10 – Designs (horisontal strip)
+========================================================= */
+.mini-row{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.hint{
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.design-strip{
+  display:flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.design-tile{
+  flex: 0 0 auto;
+  width: 132px;
+  height: 52px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.20);
+  cursor:pointer;
+  color: rgba(255,255,255,0.92);
+  position: relative;
+  overflow:hidden;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.20);
+}
+
+.design-tile .name{
+  position:absolute;
+  left: 10px;
+  top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.30);
+}
+
+.design-tile .icon{
+  position:absolute;
+  right: 10px;
+  top: 10px;
+  opacity: .95;
+}
+
+.design-tile.active{
+  outline: 2px solid rgba(139,247,255,0.65);
+  box-shadow: 0 0 0 4px rgba(139,247,255,0.12), 0 18px 40px rgba(0,0,0,0.22);
+}
+
+
+/* =========================================================
+   AFSNIT 11 – Preview card (højre)
+========================================================= */
+.preview-wrap{
+  padding: 14px;
+}
 
 .card3d{
-  height: 420px;
-  border-radius: 26px;
-  border: 1px solid rgba(255,255,255,0.18);
-  background: radial-gradient(900px 500px at 20% 10%, rgba(255,255,255,0.12), transparent 45%);
-  position:relative;
-  overflow:hidden;
-  box-shadow:
-    0 22px 60px rgba(0,0,0,0.35),
-    0 0 40px rgba(139,247,255,0.12);
-  transform: perspective(900px) rotateX(2deg);
+  position: relative;
+  border-radius: 22px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
 }
 
 .card-glow{
   position:absolute;
-  inset:-40px;
+  inset: 0;
+  border-radius: 22px;
+  pointer-events:none;
   background:
-    radial-gradient(400px 240px at 20% 20%, rgba(139,247,255,0.20), transparent 60%),
-    radial-gradient(500px 260px at 80% 20%, rgba(215,169,255,0.18), transparent 65%),
-    radial-gradient(600px 320px at 60% 90%, rgba(125,255,178,0.12), transparent 70%);
-  filter: blur(10px);
+    radial-gradient(520px 260px at 15% 15%, rgba(255,255,255,0.10), transparent 55%),
+    radial-gradient(520px 260px at 85% 15%, rgba(139,247,255,0.10), transparent 60%),
+    radial-gradient(520px 260px at 55% 90%, rgba(215,169,255,0.10), transparent 60%);
 }
 
 .card-inner{
-  position:absolute;
-  inset: 14px;
+  position: relative;
   border-radius: 22px;
-  background: linear-gradient(135deg, var(--cardA), var(--cardB));
-  border: 1px solid rgba(255,255,255,0.18);
+  min-height: 420px;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background-image: linear-gradient(135deg, var(--cardA, #1b2b66), var(--cardB, #6a4cff));
+  box-shadow: 0 18px 50px rgba(0,0,0,0.25);
   overflow:hidden;
 }
 
 .card-top{
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  padding: 14px 14px 0;
+  justify-content: space-between;
+  margin-bottom: 16px;
 }
 
 .badge{
   font-size: 12px;
-  font-weight: 800;
+  padding: 6px 10px;
   border-radius: 999px;
-  padding: 7px 10px;
-  background: rgba(255,255,255,0.14);
-  border: 1px solid rgba(255,255,255,0.18);
-  backdrop-filter: blur(8px);
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.20);
+  color: rgba(255,255,255,0.92);
 }
 
 .stamp{
-  width: 40px; height:40px;
-  display:grid; place-items:center;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.12);
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(255,255,255,0.14);
   border: 1px solid rgba(255,255,255,0.18);
 }
 
 .card-text{
-  padding: 18px 18px 16px;
-  display:flex;
-  flex-direction:column;
-  gap: 12px;
+  color: rgba(255,255,255,0.92);
 }
 
-.toLine,.fromLine{
-  font-weight: 750;
-  text-shadow: 0 8px 24px rgba(0,0,0,0.35);
+.toLine, .fromLine{
+  font-weight: 700;
+  opacity: .95;
+  margin: 8px 0;
 }
+
 .message{
-  font-size: 18px;
-  line-height: 1.18;
-  font-weight: 850;
-  letter-spacing: 0.2px;
-  text-shadow: 0 10px 30px rgba(0,0,0,0.40);
-  white-space: pre-wrap;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 14px 0;
+  line-height: 1.15;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.25);
 }
 
 .card-footer{
   position:absolute;
-  left: 0; right:0; bottom:0;
-  padding: 12px 16px;
-  display:flex;
-  justify-content:flex-end;
-  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.22));
-}
-
-.micro{
+  right: 14px;
+  bottom: 12px;
+  color: rgba(255,255,255,0.80);
   font-size: 12px;
-  color: rgba(255,255,255,0.85);
-  opacity: 0.9;
 }
 
 .small-note{
@@ -436,186 +495,92 @@ button:hover{
   font-size: 12px;
 }
 
+
 /* =========================================================
-   AFSNIT 10 – Actionbar + modal + print
+   AFSNIT 12 – Actionbar (fast i bunden)
 ========================================================= */
 .actionbar{
   position: fixed;
-  left: 0; right: 0; bottom: 0;
-  padding: 10px 14px;
-  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.35));
-  backdrop-filter: blur(10px);
+  left: 0;
+  right: 0;
+  bottom: 0;
   display:flex;
   gap: 10px;
-  justify-content:center;
+  justify-content: center;
+  padding: 12px 14px;
+  backdrop-filter: blur(10px);
+  background: rgba(0,0,0,0.20);
+  border-top: 1px solid rgba(255,255,255,0.10);
 }
 
 .action{
-  min-width: 120px;
-  border-radius: 18px;
-  border: 1px solid var(--border);
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.14);
   background: rgba(255,255,255,0.06);
   color: var(--text);
-  padding: 12px 14px;
+  padding: 10px 12px;
   cursor:pointer;
-  box-shadow: 0 10px 28px rgba(0,0,0,0.22);
-  font-weight: 800;
+  min-width: 92px;
 }
-.action:disabled{
-  opacity: .55;
-  cursor:not-allowed;
-  box-shadow:none;
-}
-.action:active{ transform: translateY(1px); }
+.action:disabled{ opacity:.45; cursor:not-allowed; }
+.action:hover{ filter: brightness(1.06); }
 
-.modal[hidden]{ display:none; }
+
+/* =========================================================
+   AFSNIT 13 – Modal (Hjælp)
+========================================================= */
 .modal{
   position: fixed;
   inset: 0;
-  display:grid;
-  place-items:center;
-  z-index: 20;
+  z-index: 50;
 }
+
 .modal-backdrop{
   position:absolute;
   inset:0;
   background: rgba(0,0,0,0.55);
 }
+
 .modal-card{
-  width:min(520px, calc(100% - 26px));
-  border-radius: 22px;
+  position: relative;
+  max-width: 520px;
+  margin: 8vh auto;
+  border-radius: 18px;
   border: 1px solid var(--border);
-  background: var(--bg);
-  box-shadow: var(--shadow);
-  position:relative;
+  background: rgba(15,18,26,0.94);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.50);
   overflow:hidden;
 }
+
+html[data-theme="light"] .modal-card,
+body[data-theme="light"] .modal-card{
+  background: rgba(255,255,255,0.96);
+}
+
 .modal-head{
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  padding: 12px 12px 10px;
+  justify-content: space-between;
+  padding: 14px;
   border-bottom: 1px solid var(--border);
 }
-.modal-title{ font-weight: 900; }
+
+.modal-title{
+  font-weight: 800;
+}
+
 .modal-body{
-  padding: 12px 14px 14px;
-  color: var(--muted);
-}
-.help-list{ margin: 0; padding-left: 18px; display:grid; gap: 8px; }
-
-@media print{
-  body{ background: #fff !important; }
-  .topbar, .wizard, .actionbar, .small-note, .panel-head, .modal{ display:none !important; }
-  .panel.preview{ border:none; box-shadow:none; background: transparent; }
-  .preview-wrap{ padding:0; }
-  .card3d{ transform:none; box-shadow:none; border:none; height: 100vh; }
+  padding: 14px;
+  color: var(--text);
 }
 
-/* =========================================================
-   AFSNIT 20 – Kompakt tema-knapper + “normal” menu-look igen
-========================================================= */
-
-/* 1) Light/Dark: små og diskrete */
-.segmented{
-  display: inline-flex !important;
-  gap: 8px !important;
-  padding: 0 !important;
-  background: transparent !important;
-  border: 0 !important;
+.help-list{
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text);
 }
 
-.segmented .seg{
-  min-width: auto !important;
-  padding: 8px 12px !important;
-  border-radius: 999px !important;
-  font-size: 13px !important;
-  line-height: 1 !important;
-  background: var(--panel2) !important;
-  border: 1px solid var(--border) !important;
-}
-
-/* Active må gerne være markeret, men ikke kæmpe */
-.segmented .seg.active{
-  background: rgba(139,247,255,0.18) !important;
-  border-color: rgba(139,247,255,0.45) !important;
-  color: var(--text) !important;
-}
-
-/* 2) Dropdowns/inputs: mindre “bredde-agtigt” og mere som før */
-select, input, textarea{
-  padding: 9px 11px !important;
-  border-radius: 12px !important;
-  font-size: 14px !important;
-}
-
-/* 3) Labels: lidt mindre, mere roligt */
-.label{
-  font-size: 12px !important;
-  margin-bottom: 4px !important;
-}
-
-/* 4) Række-layout: mindre luft (så det ligner før) */
-.row{
-  gap: 12px !important;
-}
-
-/* =========================================================
-   AFSNIT 99 – SIMPEL WIZARD (KUN ÉT LAG AD GANGEN)
-   Begynder-version – stabil og forståelig
-========================================================= */
-
-/* Alle lag er skjult */
-.card.block {
-  display: none;
-}
-
-/* Kun det aktive lag vises */
-.card.block.active {
-  display: block;
-}
-
-/* =========================================================
-   AFSNIT 90 – Wizard: vis kun aktivt lag (fix “skifter ikke”)
-========================================================= */
-
-/* Skjul alle lag som standard */
-.card.block{
-  display: none;
-}
-
-/* Vis kun det aktive lag */
-.card.block.active{
-  display: block;
-}
-
-/* Lidt “flow” så det føles som et skift */
-.card.block.active{
-  animation: stepIn .18s ease-out;
-}
-
-@keyframes stepIn{
-  from{ opacity: 0; transform: translateY(6px); }
-  to{ opacity: 1; transform: translateY(0); }
-}
-
-/* =========================================================
-   AFSNIT 91 – FORCE LÆSELIGE MENUER I DARK MODE
-========================================================= */
-html[data-theme="dark"] select,
-html[data-theme="dark"] input,
-html[data-theme="dark"] textarea,
-body[data-theme="dark"] select,
-body[data-theme="dark"] input,
-body[data-theme="dark"] textarea{
-  background: var(--fieldBg) !important;
-  color: var(--fieldText) !important;
-  border-color: var(--fieldBorder) !important;
-}
-
-/* Selve dropdown-listen (options) */
-html[data-theme="dark"] select option,
-body[data-theme="dark"] select option{
-  background: #0b1220 !important;
-  color: #ffd34d !important;
+.help-list li{
+  margin: 8px 0;
+  color: var(--text);
 }
