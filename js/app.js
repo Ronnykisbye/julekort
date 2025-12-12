@@ -48,7 +48,7 @@ const previewMode = $("previewMode");
 const progressBar = $("progressBar");
 const statusChip  = $("statusChip");
 
-/* NYT: den lille note under preview (har ingen id i HTML, så vi finder den via class) */
+/* Den lille note under preview (hardcoded i HTML -> oversættes her) */
 const exportNote = document.querySelector(".small-note");
 
 const btnBack  = $("btnBack");
@@ -66,7 +66,6 @@ const btnCloseHelp = $("btnCloseHelp");
 const helpList = $("helpList");
 
 const stepBlocks = Array.from(document.querySelectorAll(".card.block"));
-
 
   /* =========================================================
      AFSNIT 02 – Data guard (HÅRD validering)
@@ -195,11 +194,11 @@ const stepBlocks = Array.from(document.querySelectorAll(".card.block"));
     typeSelect.value = state.type;
   }
 
- /* =========================================================
-   AFSNIT 06 – Tekster (MATCHER data.js)
+/* =========================================================
+   AFSNIT 06 – Tekster (MATCHER data.js: CARD_DATA.labels[lang])
 ========================================================= */
 function applyTexts(){
-  const L = t().ui || {};
+  const L = t() || {};
 
   const set = (id, txt) => {
     const el = document.getElementById(id);
@@ -227,7 +226,7 @@ function applyTexts(){
   set("btnNext2", L.next2);
   set("designHint", L.designHint);
 
-  /* NYT: oversæt den lille note under preview */
+  /* ✅ Oversæt den lille note under preview */
   if(exportNote){
     const fallback = {
       da: "PNG/PDF genereres ud fra samme layout.",
@@ -239,10 +238,10 @@ function applyTexts(){
     exportNote.textContent = L.exportNote || fallback[state.lang] || fallback.en;
   }
 
-  // help
+  /* Help (hvis du bruger den) */
   if(helpList){
     helpList.innerHTML = "";
-    (L.help || []).forEach(line => {
+    (L.help || []).forEach((line) => {
       const li = document.createElement("li");
       li.textContent = line;
       helpList.appendChild(li);
