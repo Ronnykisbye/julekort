@@ -28,7 +28,7 @@
 
 
 /* =========================================================
-   AFSNIT 02 – DARK THEME (læselige felter/menupunkter)
+   AFSNIT 02 – DARK THEME (GUL TEKST I MENUER)
 ========================================================= */
 html[data-theme="dark"],
 body[data-theme="dark"]{
@@ -43,11 +43,12 @@ body[data-theme="dark"]{
 
   --border: rgba(255,255,255,0.16);
 
-  /* NYT: input/select/textarea */
-  --fieldBg: rgba(255,255,255,0.10);
-  --fieldText: rgba(255,255,255,0.92);
-  --fieldBorder: rgba(255,255,255,0.22);
+  /* Felter (select/input/textarea) */
+  --fieldBg: rgba(10,16,26,0.92);       /* mørk baggrund */
+  --fieldText: #ffd34d;                 /* GUL tekst */
+  --fieldBorder: rgba(255,211,77,0.40); /* gylden kant */
 }
+
 
 /* =========================================================
    AFSNIT 03 – LIGHT THEME (læselige felter/menupunkter)
