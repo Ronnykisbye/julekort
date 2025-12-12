@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0b0f17" />
+  <title>Julekort – Kisbye</title>
+
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/ui.css" />
+</head>
+
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">🎄</div>
+        <div>
+          <div class="title">Kisbye Kort</div>
+          <div class="subtitle" id="subtitle">Lav et kort på 30 sek.</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button class="pill" id="btnHelp" type="button" aria-label="Hjælp">?</button>
+      </div>
+    </header>
+
+    <main class="grid">
+      <!-- LEFT: Wizard -->
+      <section class="panel wizard">
+        <div class="panel-head">
+          <h2 id="wizardTitle">Opsætning</h2>
+          <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+        </div>
+
+        <!-- LAG 1 -->
+        <div class="card block" data-step="1">
+          <div class="block-head">
+            <div class="step-badge">Lag 1</div>
+            <div class="block-title" id="layer1Title">Grundvalg</div>
+          </div>
+
+          <div class="row">
+            <label class="field">
+              <span class="label" id="lblLang">Sprog</span>
+              <select id="langSelect"></select>
+            </label>
+
+            <label class="field">
+              <span class="label" id="lblTheme">Tema</span>
+              <div class="segmented">
+                <button class="seg" id="themeLight" type="button">Light</button>
+                <button class="seg" id="themeDark" type="button">Dark</button>
+              </div>
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="field">
+              <span class="label" id="lblType">Korttype</span>
+              <select id="typeSelect"></select>
+            </label>
+
+            <label class="field" id="occasionWrap" hidden>
+              <span class="label" id="lblOccasion">Anledning</span>
+              <input id="occasionInput" type="text" placeholder="Fx Bryllup, Dåb, Tak..." maxlength="40" />
+            </label>
+          </div>
+
+          <button class="primary next" id="toStep2" type="button">
+            <span id="btnNext1">Vælg design</span>
+            <span class="chev">›</span>
+          </button>
+        </div>
+
+        <!-- LAG 2 -->
+        <div class="card block" data-step="2">
+          <div class="block-head">
+            <div class="step-badge">Lag 2</div>
+            <div class="block-title" id="layer2Title">Design</div>
+          </div>
+
+          <div class="design-strip" id="designStrip" aria-label="Vælg design (scroll/swipe)"></div>
+
+          <div class="mini-row">
+            <div class="hint" id="designHint">Swipe/scroll – klik for at vælge.</div>
+            <div class="chip" id="designChosen">Intet valgt</div>
+          </div>
+
+          <button class="primary next" id="toStep3" type="button" disabled>
+            <span id="btnNext2">Skriv teksten</span>
+            <span class="chev">›</span>
+          </button>
+        </div>
+
+        <!-- LAG 3 -->
+        <div class="card block" data-step="3">
+          <div class="block-head">
+            <div class="step-badge">Lag 3</div>
+            <div class="block-title" id="layer3Title">Tekst</div>
+          </div>
+
+          <div class="row">
+            <label class="field">
+              <span class="label" id="lblFrom">Fra</span>
+              <input id="fromInput" type="text" placeholder="Fx Ronny" maxlength="30" />
+            </label>
+
+            <label class="field">
+              <span class="label" id="lblTo">Til</span>
+              <input id="toInput" type="text" placeholder="Fx Jolanta" maxlength="30" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span class="label" id="lblSuggestions">Forslag</span>
+            <select id="suggestSelect"></select>
+          </label>
+
+          <label class="field">
+            <span class="label" id="lblMessage">Din tekst</span>
+            <textarea id="messageInput" rows="5" maxlength="280"></textarea>
+            <div class="counter"><span id="charCount">0</span>/280</div>
+          </label>
+
+          <div class="mini-row">
+            <button class="ghost" id="btnRandom" type="button">🎲 Ny variant</button>
+            <button class="ghost" id="btnReset" type="button">↺ Nulstil</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: Preview -->
+      <section class="panel preview">
+        <div class="panel-head">
+          <h2 id="previewTitle">Live preview</h2>
+          <div class="chip" id="statusChip">Vælg Lag 1</div>
+        </div>
+
+        <div class="preview-wrap">
+          <div class="card3d" id="cardPreview" role="img" aria-label="Kort preview">
+            <div class="card-glow"></div>
+            <div class="card-inner">
+              <div class="card-top">
+                <div class="badge" id="previewBadge">Julekort</div>
+                <div class="stamp" id="previewStamp">✨</div>
+              </div>
+
+              <div class="card-text">
+                <div class="toLine" id="previewTo">Til: …</div>
+                <div class="message" id="previewMessage">Vælg et design og skriv din tekst…</div>
+                <div class="fromLine" id="previewFrom">Fra: …</div>
+              </div>
+
+              <div class="card-footer">
+                <div class="micro" id="previewMicro">kisbye.eu</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="small-note" id="previewNote">
+            PNG/PDF genereres ud fra samme layout.
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ACTIONBAR -->
+    <footer class="actionbar">
+      <button class="action" id="btnPng" type="button" disabled>⬇️ PNG</button>
+      <button class="action" id="btnPdf" type="button" disabled>🖨️ PDF</button>
+      <button class="action" id="btnMail" type="button" disabled>✉️ E-mail</button>
+      <button class="action" id="btnShare" type="button" disabled>📲 Del</button>
+    </footer>
+
+    <!-- HELP MODAL -->
+    <div class="modal" id="helpModal" hidden>
+      <div class="modal-backdrop" data-close="1"></div>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-label="Hjælp">
+        <div class="modal-head">
+          <div class="modal-title">Hjælp</div>
+          <button class="pill" id="btnCloseHelp" type="button">✕</button>
+        </div>
+        <div class="modal-body">
+          <ul class="help-list" id="helpList">
+            <li>Start i Lag 1 og klik “Vælg design”.</li>
+            <li>Vælg et design i Lag 2 (swipe/scroll).</li>
+            <li>Udfyld Fra/Til og vælg et tekstforslag i Lag 3.</li>
+            <li>Brug actionbaren nederst til PNG/PDF/E-mail/Del.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
