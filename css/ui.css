@@ -584,3 +584,97 @@ body[data-theme="light"] .modal-card{
   margin: 8px 0;
   color: var(--text);
 }
+
+/* =========================================================
+   AFSNIT 40 – Card decorations (per korttype)
+   (kun CSS overlays – ingen billeder)
+========================================================= */
+
+/* Baseline: gør preview klar til overlays */
+#cardPreview{
+  position: relative;
+  overflow: hidden;
+}
+
+/* Overlays (deaktiverer ikke klik) */
+#cardPreview::before,
+#cardPreview::after{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  pointer-events:none;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+/* Aktiver overlays når der er valgt et design */
+#cardPreview[data-design]:not([data-design=""])::before,
+#cardPreview[data-design]:not([data-design=""])::after{
+  opacity: 1;
+}
+
+/* ========== JULEKORT ========== */
+#cardPreview[data-type="xmas"]::before{
+  /* “sneglimmer” i toppen + blød tåge */
+  background:
+    radial-gradient(900px 420px at 20% 0%, rgba(255,255,255,0.18), transparent 60%),
+    radial-gradient(900px 420px at 80% 0%, rgba(255,255,255,0.12), transparent 60%),
+    radial-gradient(700px 520px at 50% 20%, rgba(255,255,255,0.10), transparent 70%);
+  mix-blend-mode: screen;
+}
+
+#cardPreview[data-type="xmas"]::after{
+  /* diskret “snow-dots” mønster */
+  background:
+    radial-gradient(circle at 10% 15%, rgba(255,255,255,0.20) 0 1px, transparent 2px),
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.16) 0 1px, transparent 2px),
+    radial-gradient(circle at 55% 12%, rgba(255,255,255,0.18) 0 1px, transparent 2px),
+    radial-gradient(circle at 75% 22%, rgba(255,255,255,0.14) 0 1px, transparent 2px),
+    radial-gradient(circle at 88% 10%, rgba(255,255,255,0.18) 0 1px, transparent 2px);
+  background-size: 140px 140px;
+  opacity: 0.55;
+}
+
+/* ========== FØDSELSDAG ========== */
+#cardPreview[data-type="birthday"]::before{
+  /* confetti / streamers */
+  background:
+    linear-gradient(115deg, transparent 0 62%, rgba(255,255,255,0.10) 63% 66%, transparent 67% 100%),
+    linear-gradient(25deg, transparent 0 60%, rgba(255,255,255,0.08) 61% 64%, transparent 65% 100%),
+    radial-gradient(240px 240px at 15% 18%, rgba(255,255,255,0.12), transparent 70%),
+    radial-gradient(240px 240px at 85% 12%, rgba(255,255,255,0.10), transparent 70%);
+  mix-blend-mode: screen;
+}
+
+#cardPreview[data-type="birthday"]::after{
+  /* små confetti prikker */
+  background:
+    radial-gradient(circle at 12% 20%, rgba(255,255,255,0.20) 0 2px, transparent 3px),
+    radial-gradient(circle at 28% 12%, rgba(255,255,255,0.16) 0 2px, transparent 3px),
+    radial-gradient(circle at 62% 18%, rgba(255,255,255,0.18) 0 2px, transparent 3px),
+    radial-gradient(circle at 82% 26%, rgba(255,255,255,0.14) 0 2px, transparent 3px),
+    radial-gradient(circle at 90% 10%, rgba(255,255,255,0.18) 0 2px, transparent 3px);
+  background-size: 180px 180px;
+  opacity: 0.45;
+}
+
+/* ========== SPECIAL ========== */
+#cardPreview[data-type="special"]::before{
+  /* “premium light rays” */
+  background:
+    conic-gradient(from 210deg at 50% 20%,
+      transparent 0 35deg,
+      rgba(255,255,255,0.08) 35deg 55deg,
+      transparent 55deg 120deg,
+      rgba(255,255,255,0.06) 120deg 140deg,
+      transparent 140deg 360deg),
+    radial-gradient(900px 520px at 50% 0%, rgba(255,255,255,0.14), transparent 70%);
+  mix-blend-mode: screen;
+}
+
+#cardPreview[data-type="special"]::after{
+  /* ekstra “glass” vignette */
+  background:
+    radial-gradient(800px 900px at 50% 55%, transparent 55%, rgba(255,255,255,0.08) 100%);
+  opacity: 0.50;
+}
