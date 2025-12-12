@@ -60,11 +60,18 @@
   const stepBlocks = Array.from(document.querySelectorAll(".card.block"));
 
   /* =========================================================
-     AFSNIT 02 – Data guard
-  ========================================================= */
-  function dataOk(){
-    return window.CARD_DATA && window.CARD_DATA.labels && window.CARD_DATA.languages;
-  }
+   AFSNIT 02 – Data guard (HÅRD validering)
+========================================================= */
+function dataOk(){
+  return (
+    window.CARD_DATA &&
+    Array.isArray(window.CARD_DATA.languages) &&
+    Array.isArray(window.CARD_DATA.types) &&
+    Array.isArray(window.CARD_DATA.designs) &&
+    window.CARD_DATA.texts
+  );
+}
+
 
  /* =========================================================
    AFSNIT 03 – State + storage
@@ -110,126 +117,68 @@ function setMessage(txt, mode){
   refreshPreviewText();
 }
 
-  /* =========================================================
-     AFSNIT 04 – i18n helpers
-  ========================================================= */
-  function t(){
-    const labels = window.CARD_DATA.labels || {};
-    return labels[state.lang] || labels.da || {};
-  }
-
-  function typeLabel(){
-    const types = (t().types || {});
-    // data.js kan have enten key-navne eller id'er — vi håndterer begge
-    return types[state.type] || state.type;
-  }
-
-  /* =========================================================
-     AFSNIT 05 – Init selects
-  ========================================================= */
-  function initLanguageSelect(){
-    langSelect.innerHTML = "";
-    (window.CARD_DATA.languages || []).forEach(l => {
-      const opt = document.createElement("option");
-      opt.value = l.code;
-      opt.textContent = l.name;
-      langSelect.appendChild(opt);
-    });
-    langSelect.value = state.lang;
-  }
-
-  function initTypeSelect(){
-    const labels = (t().types || {});
-    typeSelect.innerHTML = "";
-    (window.CARD_DATA.types || []).forEach(tp => {
-      const opt = document.createElement("option");
-      opt.value = tp.id;
-      opt.textContent = labels[tp.key] || labels[tp.id] || tp.id;
-      typeSelect.appendChild(opt);
-    });
-    typeSelect.value = state.type;
-  }
-
-  /* =========================================================
-     AFSNIT 06 – Theme + tekster
-  ========================================================= */
-  function applyTheme(){
-    // Sæt på både html og body (så theme.css virker uanset selector)
-    document.documentElement.setAttribute("data-theme", state.theme);
-    document.body && document.body.setAttribute("data-theme", state.theme);
-
-    themeLight && themeLight.classList.toggle("active", state.theme === "light");
-    themeDark  && themeDark.classList.toggle("active",  state.theme === "dark");
-  }
-
-  function applyTexts(){
-    // Tjek at ids findes før vi skriver
-    const L = t();
-
-    const set = (id, txt) => {
-      const el = $(id);
-      if(el) el.textContent = txt;
-    };
-
-    set("subtitle", L.subtitle || "");
-    set("wizardTitle", L.wizardTitle || "Opsætning");
-    set("previewTitle", L.previewTitle || "Live preview");
-
-    set("layer1Title", L.layer1Title || "Lag 1");
-    set("layer2Title", L.layer2Title || "Lag 2");
-    set("layer3Title", L.layer3Title || "Lag 3");
-
-    set("lblLang", L.lang || "Sprog");
-    set("lblTheme", L.theme || "Tema");
-    set("lblType", L.type || "Korttype");
-    set("lblOccasion", L.occasion || "Anledning");
-    set("lblFrom", L.from || "Fra");
-    set("lblTo", L.to || "Til");
-    set("lblSuggestions", L.suggestions || "Forslag");
-    set("lblMessage", L.message || "Din tekst");
-
-    set("btnNext1", L.next1 || "Vælg design");
-    set("btnNext2", L.next2 || "Skriv teksten");
-    set("designHint", L.designHint || "Swipe/scroll – klik for at vælge");
-
-    // help
-    if(helpList){
-      helpList.innerHTML = "";
-      (L.help || []).forEach(line=>{
-        const li = document.createElement("li");
-        li.textContent = line;
-        helpList.appendChild(li);
-      });
-    }
-
-    initTypeSelect();
-    refreshOccasionVisibility();
-    refreshSuggestions();
-    refreshStatus();
-  }
-
- function isSpecialType(){
-  // Robust: virker uanset om data.js bruger id "special" eller key "special"
-  if(state.type === "special") return true;
-
-  const types = (window.CARD_DATA.types || []);
-  const tp = types.find(x => x.id === state.type);
-  if(!tp) return false;
-
-  return tp.key === "special" || tp.id === "special";
+ /* =========================================================
+   AFSNIT 04 – i18n helpers (MATCHER data.js)
+========================================================= */
+function t(){
+  const texts = window.CARD_DATA.texts || {};
+  return texts[state.lang] || texts.da || {};
 }
 
-function refreshOccasionVisibility(){
-  const show = isSpecialType();
-  if(occasionWrap) occasionWrap.hidden = !show;
-
-  // Hvis vi ikke er special: nulstil feltet (så det ikke “blander sig”)
-  if(!show){
-    state.occasion = "";
-    if(occasionInput) occasionInput.value = "";
-    saveState();
-  }
+function typeLabel(){
+  const types = window.CARD_DATA.types || [];
+  const t = types.find(x => x.id === state.type);
+  return t ? t.label : state.type;
 }
+
+ function initTypeSelect(){
+  typeSelect.innerHTML = "";
+  (window.CARD_DATA.types || []).forEach(tp => {
+    const opt = document.createElement("option");
+    opt.value = tp.id;
+    opt.textContent = tp.label;
+    typeSelect.appendChild(opt);
+  });
+  typeSelect.value = state.type;
+}
+
+
+  /* =========================================================
+   AFSNIT 06 – Tekster (MATCHER data.js)
+========================================================= */
+function applyTexts(){
+  const L = t().ui || {};
+
+  const set = (id, txt) => {
+    const el = document.getElementById(id);
+    if(el && txt) el.textContent = txt;
+  };
+
+  set("subtitle", L.subtitle);
+  set("wizardTitle", L.wizardTitle);
+  set("previewTitle", L.previewTitle);
+
+  set("layer1Title", L.layer1Title);
+  set("layer2Title", L.layer2Title);
+  set("layer3Title", L.layer3Title);
+
+  set("lblLang", L.lang);
+  set("lblTheme", L.theme);
+  set("lblType", L.type);
+  set("lblOccasion", L.occasion);
+  set("lblFrom", L.from);
+  set("lblTo", L.to);
+  set("lblSuggestions", L.suggestions);
+  set("lblMessage", L.message);
+
+  set("btnNext1", L.next1);
+  set("btnNext2", L.next2);
+  set("designHint", L.designHint);
+
+  initTypeSelect();
+  refreshOccasionVisibility();
+}
+
 
 /* =========================================================
    AFSNIT 07 – Wizard (legacy)  [DEAKTIVERET]
@@ -290,17 +239,17 @@ function currentOccasionToken(){
   return placeholders[state.lang] || "[ write occasion ]";
 }
 
-function buildSuggestions(langCode){
-  // Robust: virker uanset om data.js bruger labels/i18n strukturer
-  const lang = langCode
-    ? (window.CARD_DATA.i18n?.[langCode] || window.CARD_DATA.i18n?.da || {})
-    : (t() || {});
+function buildSuggestions(){
+  const texts = window.CARD_DATA.texts || {};
+  const langBlock = texts[state.lang] || texts.da || {};
+  const suggestions = langBlock.suggestions || {};
+  const list = suggestions[state.type] || [];
 
-  const type = state.type || "xmas";
-  const source = (lang.suggestions && lang.suggestions[type]) ? lang.suggestions[type] : [];
-
-  return source.map((s) => String(s || "").replaceAll("{occasion}", currentOccasionToken()));
+  return list.map(s =>
+    String(s).replaceAll("{occasion}", currentOccasionToken())
+  );
 }
+
 
 function refreshSuggestions(){
   if(!suggestSelect) return;
