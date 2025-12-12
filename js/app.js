@@ -557,6 +557,196 @@ function drawWrapped(ctx, text, x, y, maxWidth, maxHeight, fontSize){
 }
 
 function renderCardToCanvas(scale=2){
+  const d = getActiveDesign();
+  const W = 1080 * scale;
+  const H = 1350 * scale;
+
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const ctx = c.getContext("2d");
+
+  // background
+  const a = d?.a || "#1b2b66";
+  const b = d?.b || "#6a4cff";
+  const c3 = d?.c || "#1b2b66";
+
+  const g = ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0, a);
+  g.addColorStop(0.55, b);
+  g.addColorStop(1, c3);
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+
+  // border
+  ctx.strokeStyle = "rgba(255,255,255,0.35)";
+  ctx.lineWidth = 6*scale;
+  roundRect(ctx, 40*scale, 40*scale, W-80*scale, H-80*scale, 54*scale);
+  ctx.stroke();
+
+  // badge + stamp
+  ctx.fillStyle = "rgba(255,255,255,0.18)";
+  ctx.strokeStyle = "rgba(255,255,255,0.28)";
+  ctx.lineWidth = 3*scale;
+
+  const badge = typeLabel();
+  ctx.font = `${36*scale}px ${fontStack()}`;
+  const badgeW = ctx.measureText(badge).width + 46*scale;
+  roundRect(ctx, 70*scale, 80*scale, badgeW, 64*scale, 999*scale);
+  ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.fillText(badge, 92*scale, 124*scale);
+
+  ctx.font = `${64*scale}px ${fontStack()}`;
+  ctx.fillText(d?.icon || "✨", W - 150*scale, 132*scale);
+
+  const L = t();
+  const toLine   = (state.to||"").trim()   ? `${L.to || "Til"}: ${(state.to||"").trim()}`   : `${L.to || "Til"}: …`;
+  const fromLine = (state.from||"").trim() ? `${L.from || "Fra"}: ${(state.from||"").trim()}` : `${L.from || "Fra"}: …`;
+  const msg = (state.message||"").trim() || "";
+
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.font = `${44*scale}px ${fontStack()}`;
+  ctx.fillText(toLine, 90*scale, 260*scale);
+
+  ctx.fillStyle = "rgba(255,255,255,0.96)";
+  drawWrapped(ctx, msg, 90*scale, 360*scale, W-180*scale, 740*scale, 72*scale);
+
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.font = `${44*scale}px ${fontStack()}`;
+  ctx.fillText(fromLine, 90*scale, H - 170*scale);
+
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.font = `${30*scale}px ${fontStack()}`;
+  ctx.fillText("kisbye.eu", W - 210*scale, H - 95*scale);
+
+  return c;
+}
+
+function isMobilePrintMode(){
+  // robust: “mobil-ish” skærm eller touch device
+  const small = window.matchMedia && window.matchMedia("(max-width: 720px)").matches;
+  const touch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+  return small && touch;
+}
+
+async function canvasToPngBlob(canvas){
+  return await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+}
+
+async function downloadPNG(){
+  const canvas = renderCardToCanvas(2);
+  const blob = await canvasToPngBlob(canvas);
+  if(!blob) return;
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "kisbye-kort.png";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ✅ PDF/Print: Desktop = print vindue, Mobil = share PNG (som kan printes via del-menu) */
+async function printAsPDF(){
+  const canvas = renderCardToCanvas(2);
+
+  // MOBIL: del PNG (stabilt på iOS/Android)
+  if(isMobilePrintMode()){
+    const blob = await canvasToPngBlob(canvas);
+    if(!blob) return;
+
+    const file = new File([blob], "kisbye-kort.png", { type: "image/png" });
+
+    try{
+      if(navigator.canShare && navigator.canShare({ files: [file] })){
+        await navigator.share({ title: "Kort", files: [file] });
+        return;
+      }
+    }catch(e){}
+
+    // Fallback: åbn billedet i ny fane (brugeren kan “Del/Print” derfra)
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, "_blank");
+    // hvis popup blokkes, download i stedet
+    if(!w){
+      await downloadPNG();
+    }
+    setTimeout(()=>URL.revokeObjectURL(url), 8000);
+    return;
+  }
+
+  // DESKTOP: print-side med kun kortet
+  const dataUrl = canvas.toDataURL("image/png");
+  const w = window.open("", "_blank");
+  if(!w) return;
+
+  w.document.open();
+  w.document.write(`<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>kisbye-kort</title>
+  <style>
+    @page { margin: 0; }
+    html, body { height: 100%; margin: 0; }
+    body { display:grid; place-items:center; background:#000; }
+    img { width: min(100vw, 820px); height:auto; }
+    @media print{
+      body{ background:#fff; }
+      img{ width: 100vw; max-width:none; }
+    }
+  </style>
+</head>
+<body>
+  <img src="${dataUrl}" alt="kort">
+  <script>
+    window.onload = () => { window.focus(); window.print(); };
+  </script>
+</body>
+</html>`);
+  w.document.close();
+}
+
+function sendEmail(){
+  const subj = `${typeLabel()}`.trim();
+  const L = t();
+  const body = [
+    `${typeLabel()}`,
+    "",
+    `${L.to || "Til"}: ${(state.to||"").trim() || "…"}`,
+    `${L.from || "Fra"}: ${(state.from||"").trim() || "…"}`,
+    "",
+    (state.message||"").trim()
+  ].join("\n");
+  window.location.href = `mailto:?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+}
+
+async function shareCard(){
+  const text = (state.message||"").trim();
+  const title = typeLabel();
+
+  const canvas = renderCardToCanvas(2);
+  const blob = await canvasToPngBlob(canvas);
+
+  try{
+    if(blob && navigator.canShare){
+      const file = new File([blob], "kisbye-kort.png", { type:"image/png" });
+      if(navigator.canShare({ files: [file] })){
+        await navigator.share({ title, text, files:[file] });
+        return;
+      }
+    }
+    if(navigator.share){
+      await navigator.share({ title, text });
+      return;
+    }
+    await navigator.clipboard.writeText(text);
+    alert("Din tekst er kopieret – del den hvor du vil.");
+  }catch(e){}
+}
 
   /* =========================================================
      AFSNIT 13 – Events
