@@ -551,3 +551,24 @@ button:hover{
   from{ opacity: 0; transform: translateY(6px); }
   to{ opacity: 1; transform: translateY(0); }
 }
+
+/* =========================================================
+   AFSNIT 91 – FORCE LÆSELIGE MENUER I DARK MODE
+========================================================= */
+html[data-theme="dark"] select,
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+body[data-theme="dark"] select,
+body[data-theme="dark"] input,
+body[data-theme="dark"] textarea{
+  background: var(--fieldBg) !important;
+  color: var(--fieldText) !important;
+  border-color: var(--fieldBorder) !important;
+}
+
+/* Selve dropdown-listen (options) */
+html[data-theme="dark"] select option,
+body[data-theme="dark"] select option{
+  background: #0b1220 !important;
+  color: #ffd34d !important;
+}
