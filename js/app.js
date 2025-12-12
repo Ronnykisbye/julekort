@@ -165,39 +165,27 @@
     refreshStatus();
   }
 
-  /* =========================================================
-     AFSNIT 06 – SIMPEL WIZARD (KUN ÉT LAG AD GANGEN)
-  ========================================================= */
-  function setStep(step){
-    state.step = step;
-    saveState();
+/* =========================================================
+   AFSNIT 06 – SIMPEL WIZARD (KUN ÉT LAG AD GANGEN) + TILBAGE
+========================================================= */
+function setStep(step){
+  state.step = step;
+  saveState();
 
-    // Vis kun det aktive lag
-    stepBlocks.forEach(block => {
-      const s = parseInt(block.dataset.step, 10);
-      if (s === step) block.classList.add("active");
-      else block.classList.remove("active");
-    });
+  // Vis kun det aktive lag
+  stepBlocks.forEach(block => {
+    const s = parseInt(block.dataset.step, 10);
+    if (s === step) block.classList.add("active");
+    else block.classList.remove("active");
+  });
 
-    refreshProgress();
-    refreshStatus();
-  }
+  // Tilbage-knap: skjul på trin 1
+  if (btnBack) btnBack.disabled = (step === 1);
 
-  function refreshProgress(){
-    const pct = (state.step - 1) / 2 * 100;
-    progressBar.style.width = `${pct}%`;
-  }
+  refreshProgress();
+  refreshStatus();
+}
 
-  function refreshStatus(){
-    if(state.step === 1) statusChip.textContent = t().status1;
-    if(state.step === 2) statusChip.textContent = t().status2;
-    if(state.step === 3) statusChip.textContent = t().status3;
-  }
-
-  function refreshOccasionVisibility(){
-    const isSpecial = state.type === "special";
-    occasionWrap.hidden = !isSpecial;
-  }
 
   /* =========================================================
      AFSNIT 07 – Designs
