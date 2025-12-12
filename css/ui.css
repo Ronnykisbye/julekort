@@ -518,3 +518,27 @@ textarea{ resize:none; min-height: 110px; line-height: 1.25; }
 .card.block.active {
   display: block;
 }
+
+/* =========================================================
+   AFSNIT 90 – Wizard: vis kun aktivt lag (fix “skifter ikke”)
+========================================================= */
+
+/* Skjul alle lag som standard */
+.card.block{
+  display: none;
+}
+
+/* Vis kun det aktive lag */
+.card.block.active{
+  display: block;
+}
+
+/* Lidt “flow” så det føles som et skift */
+.card.block.active{
+  animation: stepIn .18s ease-out;
+}
+
+@keyframes stepIn{
+  from{ opacity: 0; transform: translateY(6px); }
+  to{ opacity: 1; transform: translateY(0); }
+}
