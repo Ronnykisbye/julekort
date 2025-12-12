@@ -14,58 +14,59 @@
   const $ = (id) => document.getElementById(id);
 
   /* =========================================================
-   AFSNIT 01 – DOM refs
-========================================================= */
-const langSelect = $("langSelect");
-const typeSelect = $("typeSelect");
-const occasionWrap = $("occasionWrap");
-const occasionInput = $("occasionInput");
+     AFSNIT 01 – DOM refs
+  ========================================================= */
+  const langSelect = $("langSelect");
+  const typeSelect = $("typeSelect");
+  const occasionWrap = $("occasionWrap");
+  const occasionInput = $("occasionInput");
 
-const themeLight = $("themeLight");
-const themeDark  = $("themeDark");
+  const themeLight = $("themeLight");
+  const themeDark  = $("themeDark");
 
-const toStep2 = $("toStep2");
-const toStep3 = $("toStep3");
+  const toStep2 = $("toStep2");
+  const toStep3 = $("toStep3");
 
-const designStrip  = $("designStrip");
-const designChosen = $("designChosen");
+  const designStrip  = $("designStrip");
+  const designChosen = $("designChosen");
 
-const fromInput = $("fromInput");
-const toInput   = $("toInput");
-const suggestSelect = $("suggestSelect");
-const messageInput  = $("messageInput");
-const charCount     = $("charCount");
+  const fromInput = $("fromInput");
+  const toInput   = $("toInput");
+  const suggestSelect = $("suggestSelect");
+  const messageInput  = $("messageInput");
+  const charCount     = $("charCount");
 
-const previewBadge   = $("previewBadge");
-const previewStamp   = $("previewStamp");
-const previewTo      = $("previewTo");
-const previewFrom    = $("previewFrom");
-const previewMessage = $("previewMessage");
-const cardPreview    = $("cardPreview");
+  const previewBadge   = $("previewBadge");
+  const previewStamp   = $("previewStamp");
+  const previewTo      = $("previewTo");
+  const previewFrom    = $("previewFrom");
+  const previewMessage = $("previewMessage");
+  const cardPreview    = $("cardPreview");
 
-const previewMode = $("previewMode");
+  const previewMode = $("previewMode");
 
-const progressBar = $("progressBar");
-const statusChip  = $("statusChip");
+  const progressBar = $("progressBar");
+  const statusChip  = $("statusChip");
 
-/* Den lille note under preview (hardcoded i HTML -> oversættes her) */
-const exportNote = document.querySelector(".small-note");
+  /* ✅ RETTELSE: der kan være flere .small-note i layoutet (desktop/mobile).
+     Vi opdaterer ALLE, så den rigtige altid skifter sprog. */
+  const exportNotes = Array.from(document.querySelectorAll(".small-note"));
 
-const btnBack  = $("btnBack");
-const btnPng   = $("btnPng");
-const btnPdf   = $("btnPdf");
-const btnMail  = $("btnMail");
-const btnShare = $("btnShare");
+  const btnBack  = $("btnBack");
+  const btnPng   = $("btnPng");
+  const btnPdf   = $("btnPdf");
+  const btnMail  = $("btnMail");
+  const btnShare = $("btnShare");
 
-const btnRandom = $("btnRandom");
-const btnReset  = $("btnReset");
+  const btnRandom = $("btnRandom");
+  const btnReset  = $("btnReset");
 
-const btnHelp = $("btnHelp");
-const helpModal = $("helpModal");
-const btnCloseHelp = $("btnCloseHelp");
-const helpList = $("helpList");
+  const btnHelp = $("btnHelp");
+  const helpModal = $("helpModal");
+  const btnCloseHelp = $("btnCloseHelp");
+  const helpList = $("helpList");
 
-const stepBlocks = Array.from(document.querySelectorAll(".card.block"));
+  const stepBlocks = Array.from(document.querySelectorAll(".card.block"));
 
   /* =========================================================
      AFSNIT 02 – Data guard (HÅRD validering)
@@ -194,63 +195,64 @@ const stepBlocks = Array.from(document.querySelectorAll(".card.block"));
     typeSelect.value = state.type;
   }
 
-/* =========================================================
-   AFSNIT 06 – Tekster (MATCHER data.js: CARD_DATA.labels[lang])
-========================================================= */
-function applyTexts(){
-  const L = t() || {};
+  /* =========================================================
+     AFSNIT 06 – Tekster (MATCHER data.js)
+  ========================================================= */
+  function applyTexts(){
+    const L = t().ui || {};
 
-  const set = (id, txt) => {
-    const el = document.getElementById(id);
-    if(el && txt != null) el.textContent = String(txt);
-  };
-
-  set("subtitle", L.subtitle);
-  set("wizardTitle", L.wizardTitle);
-  set("previewTitle", L.previewTitle);
-
-  set("layer1Title", L.layer1Title);
-  set("layer2Title", L.layer2Title);
-  set("layer3Title", L.layer3Title);
-
-  set("lblLang", L.lang);
-  set("lblTheme", L.theme);
-  set("lblType", L.type);
-  set("lblOccasion", L.occasion);
-  set("lblFrom", L.from);
-  set("lblTo", L.to);
-  set("lblSuggestions", L.suggestions);
-  set("lblMessage", L.message);
-
-  set("btnNext1", L.next1);
-  set("btnNext2", L.next2);
-  set("designHint", L.designHint);
-
-  /* ✅ Oversæt den lille note under preview */
-  if(exportNote){
-    const fallback = {
-      da: "PNG/PDF genereres ud fra samme layout.",
-      en: "PNG/PDF are generated from the same layout.",
-      de: "PNG/PDF werden aus demselben Layout erzeugt.",
-      pl: "PNG/PDF są generowane z tego samego układu.",
-      lt: "PNG/PDF generuojami iš to paties maketo."
+    const set = (id, txt) => {
+      const el = document.getElementById(id);
+      if(el && txt != null) el.textContent = String(txt);
     };
-    exportNote.textContent = L.exportNote || fallback[state.lang] || fallback.en;
-  }
 
-  /* Help (hvis du bruger den) */
-  if(helpList){
-    helpList.innerHTML = "";
-    (L.help || []).forEach((line) => {
-      const li = document.createElement("li");
-      li.textContent = line;
-      helpList.appendChild(li);
-    });
-  }
+    set("subtitle", L.subtitle);
+    set("wizardTitle", L.wizardTitle);
+    set("previewTitle", L.previewTitle);
 
-  initTypeSelect();
-  refreshOccasionVisibility();
-}
+    set("layer1Title", L.layer1Title);
+    set("layer2Title", L.layer2Title);
+    set("layer3Title", L.layer3Title);
+
+    set("lblLang", L.lang);
+    set("lblTheme", L.theme);
+    set("lblType", L.type);
+    set("lblOccasion", L.occasion);
+    set("lblFrom", L.from);
+    set("lblTo", L.to);
+    set("lblSuggestions", L.suggestions);
+    set("lblMessage", L.message);
+
+    set("btnNext1", L.next1);
+    set("btnNext2", L.next2);
+    set("designHint", L.designHint);
+
+    /* ✅ RETTELSE: oversæt ALLE små noter (ikke kun første) */
+    if(exportNotes.length){
+      const fallback = {
+        da: "PNG/PDF genereres ud fra samme layout.",
+        en: "PNG/PDF are generated from the same layout.",
+        de: "PNG/PDF werden aus demselben Layout erzeugt.",
+        pl: "PNG/PDF są generowane z tego samego układu.",
+        lt: "PNG/PDF generuojami iš to paties maketo."
+      };
+      const txt = L.exportNote || fallback[state.lang] || fallback.en;
+      exportNotes.forEach(el => { el.textContent = txt; });
+    }
+
+    // help
+    if(helpList){
+      helpList.innerHTML = "";
+      (L.help || []).forEach(line => {
+        const li = document.createElement("li");
+        li.textContent = line;
+        helpList.appendChild(li);
+      });
+    }
+
+    initTypeSelect();
+    refreshOccasionVisibility();
+  }
 
   /* =========================================================
      AFSNIT 07 – Special / Anledning visibility
@@ -308,181 +310,180 @@ function applyTexts(){
     }
   }
 
-/* =========================================================
-   AFSNIT 09 – Suggestions + Preview (MED design-hooks)
-========================================================= */
-function currentOccasionToken(){
-  const occ = (state.occasion || "").trim();
-  if(occ.length) return occ;
+  /* =========================================================
+     AFSNIT 09 – Suggestions + Preview (MED design-hooks)
+  ========================================================= */
+  function currentOccasionToken(){
+    const occ = (state.occasion || "").trim();
+    if(occ.length) return occ;
 
-  const placeholders = {
-    da: "[ skriv anledning ]",
-    en: "[ write occasion ]",
-    de: "[ Anlass eingeben ]",
-    pl: "[ wpisz okazję ]",
-    lt: "[ įrašyk progą ]"
-  };
-  return placeholders[state.lang] || "[ write occasion ]";
-}
-
-function buildSuggestions(){
-  const S = window.CARD_DATA.suggestions || {};
-  const langBlock = S[state.lang] || S.da || {};
-  const list = langBlock[state.type] || [];
-
-  return list.map(s =>
-    String(s || "").replaceAll("{occasion}", currentOccasionToken())
-  );
-}
-
-function refreshSuggestions(){
-  if(!suggestSelect) return;
-
-  const list = buildSuggestions();
-  suggestSelect.innerHTML = "";
-
-  list.forEach((txt, idx) => {
-    const opt = document.createElement("option");
-    opt.value = String(idx);
-    opt.textContent = txt;
-    suggestSelect.appendChild(opt);
-  });
-
-  // Regelsæt:
-  // suggestion → auto-skift
-  // custom → behold tekst
-  if(state.messageMode !== "custom"){
-    const first = list[0] || "";
-    suggestSelect.value = "0";
-    setMessage(first, "suggestion");
-    return;
+    const placeholders = {
+      da: "[ skriv anledning ]",
+      en: "[ write occasion ]",
+      de: "[ Anlass eingeben ]",
+      pl: "[ wpisz okazję ]",
+      lt: "[ įrašyk progą ]"
+    };
+    return placeholders[state.lang] || "[ write occasion ]";
   }
 
-  refreshPreviewText();
-}
+  function buildSuggestions(){
+    const S = window.CARD_DATA.suggestions || {};
+    const langBlock = S[state.lang] || S.da || {};
+    const list = langBlock[state.type] || [];
 
-function randomSuggestion(){
-  const list = buildSuggestions();
-  if(!list.length) return;
-  const pick = list[Math.floor(Math.random() * list.length)];
-  setMessage(pick, "suggestion");
-}
+    return list.map(s =>
+      String(s || "").replaceAll("{occasion}", currentOccasionToken())
+    );
+  }
 
-function refreshPreviewText(){
-  // === DESIGN-HOOKS TIL CSS ===
-  if(cardPreview){
+  function refreshSuggestions(){
+    if(!suggestSelect) return;
+
+    const list = buildSuggestions();
+    suggestSelect.innerHTML = "";
+
+    list.forEach((txt, idx) => {
+      const opt = document.createElement("option");
+      opt.value = String(idx);
+      opt.textContent = txt;
+      suggestSelect.appendChild(opt);
+    });
+
+    // Regelsæt:
+    // suggestion → auto-skift
+    // custom → behold tekst
+    if(state.messageMode !== "custom"){
+      const first = list[0] || "";
+      suggestSelect.value = "0";
+      setMessage(first, "suggestion");
+      return;
+    }
+
+    refreshPreviewText();
+  }
+
+  function randomSuggestion(){
+    const list = buildSuggestions();
+    if(!list.length) return;
+    const pick = list[Math.floor(Math.random() * list.length)];
+    setMessage(pick, "suggestion");
+  }
+
+  function refreshPreviewText(){
+    // === DESIGN-HOOKS TIL CSS ===
+    if(cardPreview){
+      cardPreview.dataset.type   = state.type || "";
+      cardPreview.dataset.design = state.designId || "";
+    }
+
+    // Badge = korttype
+    if(previewBadge) previewBadge.textContent = typeLabel();
+
+    const L = t();
+    const to   = (state.to || "").trim();
+    const from = (state.from || "").trim();
+    const msg  = (state.message || "").trim();
+
+    if(previewTo){
+      previewTo.textContent = `${L.to || "Til"}: ${to || "…"}`;
+    }
+    if(previewFrom){
+      previewFrom.textContent = `${L.from || "Fra"}: ${from || "…"}`;
+    }
+
+    if(previewMessage){
+      if(msg){
+        previewMessage.textContent = msg;
+      }else{
+        previewMessage.textContent = state.designId
+          ? (L.writeYourText || "Skriv din tekst…")
+          : (L.pickDesignFirst || "Vælg et design og skriv din tekst…");
+      }
+    }
+
+    if(charCount && messageInput){
+      charCount.textContent = String(messageInput.value.length);
+    }
+
+    refreshStatus();
+    refreshActionbarEnabled();
+  }
+
+  /* =========================================================
+     AFSNIT 10 – Design tiles + apply (MED design-hooks)
+  ========================================================= */
+  function getDesignById(id){
+    const designs = window.CARD_DATA.designs || [];
+    return designs.find(d => d.id === id) || null;
+  }
+
+  function refreshDesignChosenLabel(){
+    if(!designChosen) return;
+    if(!state.designId){
+      designChosen.textContent = "Intet valgt";
+      return;
+    }
+    const d = getDesignById(state.designId);
+    designChosen.textContent = d ? d.name : state.designId;
+  }
+
+  function buildDesignTiles(){
+    if(!designStrip) return;
+
+    const designs = window.CARD_DATA.designs || [];
+    designStrip.innerHTML = "";
+
+    designs.forEach(d => {
+      const tile = document.createElement("div");
+      tile.className = "design-tile";
+      tile.dataset.id = d.id;
+
+      tile.style.backgroundImage =
+        `linear-gradient(135deg, ${d.a}, ${d.b}, ${d.c || d.a})`;
+
+      const name = document.createElement("div");
+      name.className = "name";
+      name.textContent = d.name;
+
+      const icon = document.createElement("div");
+      icon.className = "icon";
+      icon.textContent = d.icon || "✨";
+
+      tile.appendChild(name);
+      tile.appendChild(icon);
+
+      if(state.designId === d.id){
+        tile.classList.add("active");
+      }
+
+      designStrip.appendChild(tile);
+    });
+
+    refreshDesignChosenLabel();
+  }
+
+  function applyDesignToPreview(){
+    if(!cardPreview) return;
+
+    const d = getDesignById(state.designId);
+    if(!d) return;
+
+    // === CSS DESIGN-VARIABLER ===
+    cardPreview.style.setProperty("--cardA", d.a);
+    cardPreview.style.setProperty("--cardB", d.b);
+
+    // === DATA ATTRIBUTES (bruges af CSS overlays) ===
     cardPreview.dataset.type   = state.type || "";
     cardPreview.dataset.design = state.designId || "";
-  }
 
-  // Badge = korttype
-  if(previewBadge) previewBadge.textContent = typeLabel();
-
-  const L = t();
-  const to   = (state.to || "").trim();
-  const from = (state.from || "").trim();
-  const msg  = (state.message || "").trim();
-
-  if(previewTo){
-    previewTo.textContent = `${L.to || "Til"}: ${to || "…"}`;
-  }
-  if(previewFrom){
-    previewFrom.textContent = `${L.from || "Fra"}: ${from || "…"}`;
-  }
-
-  if(previewMessage){
-    if(msg){
-      previewMessage.textContent = msg;
-    }else{
-      previewMessage.textContent = state.designId
-        ? (L.writeYourText || "Skriv din tekst…")
-        : (L.pickDesignFirst || "Vælg et design og skriv din tekst…");
-    }
-  }
-
-  if(charCount && messageInput){
-    charCount.textContent = String(messageInput.value.length);
-  }
-
-  refreshStatus();
-  refreshActionbarEnabled();
-}
-
-
-/* =========================================================
-   AFSNIT 10 – Design tiles + apply (MED design-hooks)
-========================================================= */
-function getDesignById(id){
-  const designs = window.CARD_DATA.designs || [];
-  return designs.find(d => d.id === id) || null;
-}
-
-function refreshDesignChosenLabel(){
-  if(!designChosen) return;
-  if(!state.designId){
-    designChosen.textContent = "Intet valgt";
-    return;
-  }
-  const d = getDesignById(state.designId);
-  designChosen.textContent = d ? d.name : state.designId;
-}
-
-function buildDesignTiles(){
-  if(!designStrip) return;
-
-  const designs = window.CARD_DATA.designs || [];
-  designStrip.innerHTML = "";
-
-  designs.forEach(d => {
-    const tile = document.createElement("div");
-    tile.className = "design-tile";
-    tile.dataset.id = d.id;
-
-    tile.style.backgroundImage =
-      `linear-gradient(135deg, ${d.a}, ${d.b}, ${d.c || d.a})`;
-
-    const name = document.createElement("div");
-    name.className = "name";
-    name.textContent = d.name;
-
-    const icon = document.createElement("div");
-    icon.className = "icon";
-    icon.textContent = d.icon || "✨";
-
-    tile.appendChild(name);
-    tile.appendChild(icon);
-
-    if(state.designId === d.id){
-      tile.classList.add("active");
+    if(previewStamp){
+      previewStamp.textContent = d.icon || "✨";
     }
 
-    designStrip.appendChild(tile);
-  });
-
-  refreshDesignChosenLabel();
-}
-
-function applyDesignToPreview(){
-  if(!cardPreview) return;
-
-  const d = getDesignById(state.designId);
-  if(!d) return;
-
-  // === CSS DESIGN-VARIABLER ===
-  cardPreview.style.setProperty("--cardA", d.a);
-  cardPreview.style.setProperty("--cardB", d.b);
-
-  // === DATA ATTRIBUTES (bruges af CSS overlays) ===
-  cardPreview.dataset.type   = state.type || "";
-  cardPreview.dataset.design = state.designId || "";
-
-  if(previewStamp){
-    previewStamp.textContent = d.icon || "✨";
+    refreshDesignChosenLabel();
+    refreshActionbarEnabled();
   }
-
-  refreshDesignChosenLabel();
-  refreshActionbarEnabled();
-}
 
   /* =========================================================
      AFSNIT 11 – Actionbar enable/disable
@@ -494,145 +495,145 @@ function applyDesignToPreview(){
     });
   }
 
- /* =========================================================
-   AFSNIT 12 – Output (PNG / PDF / Email / Share)
-========================================================= */
-function getActiveDesign(){
-  const designs = (window.CARD_DATA.designs || []);
-  return designs.find(x=>x.id===state.designId) || designs[0];
-}
-
-function fontStack(){
-  return "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
-}
-
-function roundRect(ctx, x,y,w,h,r){
-  const rr = Math.min(r, w/2, h/2);
-  ctx.beginPath();
-  ctx.moveTo(x+rr,y);
-  ctx.arcTo(x+w,y,x+w,y+h,rr);
-  ctx.arcTo(x+w,y+h,x,y+h,rr);
-  ctx.arcTo(x,y+h,x,y,rr);
-  ctx.arcTo(x,y,x+w,y,rr);
-  ctx.closePath();
-}
-
-function drawWrapped(ctx, text, x, y, maxWidth, maxHeight, fontSize){
-  const words = (text || "").split(/\s+/).filter(Boolean);
-  if(!words.length) return;
-
-  ctx.font = `${fontSize}px ${fontStack()}`;
-  const lineH = Math.floor(fontSize * 1.18);
-
-  let line = "";
-  let yy = y;
-
-  for(let i=0;i<words.length;i++){
-    const test = line ? (line + " " + words[i]) : words[i];
-    if(ctx.measureText(test).width <= maxWidth){
-      line = test;
-    }else{
-      ctx.fillText(line, x, yy);
-      yy += lineH;
-      line = words[i];
-      if(yy > y + maxHeight) break;
-    }
+  /* =========================================================
+     AFSNIT 12 – Output (PNG / PDF / Email / Share)
+  ========================================================= */
+  function getActiveDesign(){
+    const designs = (window.CARD_DATA.designs || []);
+    return designs.find(x=>x.id===state.designId) || designs[0];
   }
-  if(yy <= y + maxHeight) ctx.fillText(line, x, yy);
-}
 
-function renderCardToCanvas(scale=2){
-  const d = getActiveDesign();
-  const W = 1080 * scale;
-  const H = 1350 * scale;
+  function fontStack(){
+    return "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
+  }
 
-  const c = document.createElement("canvas");
-  c.width = W; c.height = H;
-  const ctx = c.getContext("2d");
+  function roundRect(ctx, x,y,w,h,r){
+    const rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr,y);
+    ctx.arcTo(x+w,y,x+w,y+h,rr);
+    ctx.arcTo(x+w,y+h,x,y+h,rr);
+    ctx.arcTo(x,y+h,x,y,rr);
+    ctx.arcTo(x,y,x+w,y,rr);
+    ctx.closePath();
+  }
 
-  // background
-  const a = d?.a || "#1b2b66";
-  const b = d?.b || "#6a4cff";
-  const c3 = d?.c || "#1b2b66";
+  function drawWrapped(ctx, text, x, y, maxWidth, maxHeight, fontSize){
+    const words = (text || "").split(/\s+/).filter(Boolean);
+    if(!words.length) return;
 
-  const g = ctx.createLinearGradient(0,0,W,H);
-  g.addColorStop(0, a);
-  g.addColorStop(0.55, b);
-  g.addColorStop(1, c3);
-  ctx.fillStyle = g;
-  ctx.fillRect(0,0,W,H);
+    ctx.font = `${fontSize}px ${fontStack()}`;
+    const lineH = Math.floor(fontSize * 1.18);
 
-  // border
-  ctx.strokeStyle = "rgba(255,255,255,0.35)";
-  ctx.lineWidth = 6*scale;
-  roundRect(ctx, 40*scale, 40*scale, W-80*scale, H-80*scale, 54*scale);
-  ctx.stroke();
+    let line = "";
+    let yy = y;
 
-  // badge + stamp
-  ctx.fillStyle = "rgba(255,255,255,0.18)";
-  ctx.strokeStyle = "rgba(255,255,255,0.28)";
-  ctx.lineWidth = 3*scale;
+    for(let i=0;i<words.length;i++){
+      const test = line ? (line + " " + words[i]) : words[i];
+      if(ctx.measureText(test).width <= maxWidth){
+        line = test;
+      }else{
+        ctx.fillText(line, x, yy);
+        yy += lineH;
+        line = words[i];
+        if(yy > y + maxHeight) break;
+      }
+    }
+    if(yy <= y + maxHeight) ctx.fillText(line, x, yy);
+  }
 
-  const badge = typeLabel();
-  ctx.font = `${36*scale}px ${fontStack()}`;
-  const badgeW = ctx.measureText(badge).width + 46*scale;
-  roundRect(ctx, 70*scale, 80*scale, badgeW, 64*scale, 999*scale);
-  ctx.fill(); ctx.stroke();
+  function renderCardToCanvas(scale=2){
+    const d = getActiveDesign();
+    const W = 1080 * scale;
+    const H = 1350 * scale;
 
-  ctx.fillStyle = "rgba(255,255,255,0.92)";
-  ctx.fillText(badge, 92*scale, 124*scale);
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const ctx = c.getContext("2d");
 
-  ctx.font = `${64*scale}px ${fontStack()}`;
-  ctx.fillText(d?.icon || "✨", W - 150*scale, 132*scale);
+    // background
+    const a = d?.a || "#1b2b66";
+    const b = d?.b || "#6a4cff";
+    const c3 = d?.c || "#1b2b66";
 
-  const L = t();
-  const toLine   = (state.to||"").trim()   ? `${L.to || "Til"}: ${(state.to||"").trim()}`   : `${L.to || "Til"}: …`;
-  const fromLine = (state.from||"").trim() ? `${L.from || "Fra"}: ${(state.from||"").trim()}` : `${L.from || "Fra"}: …`;
-  const msg = (state.message||"").trim() || "";
+    const g = ctx.createLinearGradient(0,0,W,H);
+    g.addColorStop(0, a);
+    g.addColorStop(0.55, b);
+    g.addColorStop(1, c3);
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
 
-  ctx.fillStyle = "rgba(255,255,255,0.92)";
-  ctx.font = `${44*scale}px ${fontStack()}`;
-  ctx.fillText(toLine, 90*scale, 260*scale);
+    // border
+    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.lineWidth = 6*scale;
+    roundRect(ctx, 40*scale, 40*scale, W-80*scale, H-80*scale, 54*scale);
+    ctx.stroke();
 
-  ctx.fillStyle = "rgba(255,255,255,0.96)";
-  drawWrapped(ctx, msg, 90*scale, 360*scale, W-180*scale, 740*scale, 72*scale);
+    // badge + stamp
+    ctx.fillStyle = "rgba(255,255,255,0.18)";
+    ctx.strokeStyle = "rgba(255,255,255,0.28)";
+    ctx.lineWidth = 3*scale;
 
-  ctx.fillStyle = "rgba(255,255,255,0.92)";
-  ctx.font = `${44*scale}px ${fontStack()}`;
-  ctx.fillText(fromLine, 90*scale, H - 170*scale);
+    const badge = typeLabel();
+    ctx.font = `${36*scale}px ${fontStack()}`;
+    const badgeW = ctx.measureText(badge).width + 46*scale;
+    roundRect(ctx, 70*scale, 80*scale, badgeW, 64*scale, 999*scale);
+    ctx.fill(); ctx.stroke();
 
-  ctx.fillStyle = "rgba(255,255,255,0.85)";
-  ctx.font = `${30*scale}px ${fontStack()}`;
-  ctx.fillText("kisbye.eu", W - 210*scale, H - 95*scale);
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.fillText(badge, 92*scale, 124*scale);
 
-  return c;
-}
+    ctx.font = `${64*scale}px ${fontStack()}`;
+    ctx.fillText(d?.icon || "✨", W - 150*scale, 132*scale);
 
-async function downloadPNG(){
-  const canvas = renderCardToCanvas(2);
-  canvas.toBlob((blob)=>{
-    if(!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "kisbye-kort.png";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }, "image/png");
-}
+    const L = t();
+    const toLine   = (state.to||"").trim()   ? `${L.to || "Til"}: ${(state.to||"").trim()}`   : `${L.to || "Til"}: …`;
+    const fromLine = (state.from||"").trim() ? `${L.from || "Fra"}: ${(state.from||"").trim()}` : `${L.from || "Fra"}: …`;
+    const msg = (state.message||"").trim() || "";
 
-/* PDF: åbn print-side med KUN kortet */
-function printAsPDF(){
-  const canvas = renderCardToCanvas(2);
-  const dataUrl = canvas.toDataURL("image/png");
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.font = `${44*scale}px ${fontStack()}`;
+    ctx.fillText(toLine, 90*scale, 260*scale);
 
-  const w = window.open("", "_blank");
-  if(!w) return;
+    ctx.fillStyle = "rgba(255,255,255,0.96)";
+    drawWrapped(ctx, msg, 90*scale, 360*scale, W-180*scale, 740*scale, 72*scale);
 
-  w.document.open();
-  w.document.write(`<!doctype html>
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.font = `${44*scale}px ${fontStack()}`;
+    ctx.fillText(fromLine, 90*scale, H - 170*scale);
+
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = `${30*scale}px ${fontStack()}`;
+    ctx.fillText("kisbye.eu", W - 210*scale, H - 95*scale);
+
+    return c;
+  }
+
+  async function downloadPNG(){
+    const canvas = renderCardToCanvas(2);
+    canvas.toBlob((blob)=>{
+      if(!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "kisbye-kort.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  }
+
+  /* PDF: åbn print-side med KUN kortet */
+  function printAsPDF(){
+    const canvas = renderCardToCanvas(2);
+    const dataUrl = canvas.toDataURL("image/png");
+
+    const w = window.open("", "_blank");
+    if(!w) return;
+
+    w.document.open();
+    w.document.write(`<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -667,43 +668,42 @@ function printAsPDF(){
   </script>
 </body>
 </html>`);
-  w.document.close();
-}
+    w.document.close();
+  }
 
-function sendEmail(){
-  const subj = `${typeLabel()}`.trim();
-  const L = t();
-  const body = [
-    `${typeLabel()}`,
-    "",
-    `${L.to || "Til"}: ${(state.to||"").trim() || "…"}`,
-    `${L.from || "Fra"}: ${(state.from||"").trim() || "…"}`,
-    "",
-    (state.message||"").trim()
-  ].join("\n");
-  window.location.href = `mailto:?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
-}
+  function sendEmail(){
+    const subj = `${typeLabel()}`.trim();
+    const L = t();
+    const body = [
+      `${typeLabel()}`,
+      "",
+      `${L.to || "Til"}: ${(state.to||"").trim() || "…"}`,
+      `${L.from || "Fra"}: ${(state.from||"").trim() || "…"}`,
+      "",
+      (state.message||"").trim()
+    ].join("\n");
+    window.location.href = `mailto:?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+  }
 
-async function shareCard(){
-  const text = (state.message||"").trim();
-  const title = typeLabel();
+  async function shareCard(){
+    const text = (state.message||"").trim();
+    const title = typeLabel();
 
-  const canvas = renderCardToCanvas(2);
-  const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+    const canvas = renderCardToCanvas(2);
+    const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
 
-  try{
-    if(blob && navigator.canShare && navigator.canShare({ files: [new File([blob], "kort.png", {type:"image/png"})] })){
-      const file = new File([blob], "kisbye-kort.png", { type:"image/png" });
-      await navigator.share({ title, text, files:[file] });
-    } else if(navigator.share){
-      await navigator.share({ title, text });
-    } else {
-      await navigator.clipboard.writeText(text);
-      alert("Din tekst er kopieret – del den hvor du vil.");
-    }
-  }catch(e){}
-}
-
+    try{
+      if(blob && navigator.canShare && navigator.canShare({ files: [new File([blob], "kort.png", {type:"image/png"})] })){
+        const file = new File([blob], "kisbye-kort.png", { type:"image/png" });
+        await navigator.share({ title, text, files:[file] });
+      } else if(navigator.share){
+        await navigator.share({ title, text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        alert("Din tekst er kopieret – del den hvor du vil.");
+      }
+    }catch(e){}
+  }
 
   /* =========================================================
      AFSNIT 13 – Events
