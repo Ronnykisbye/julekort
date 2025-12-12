@@ -261,88 +261,35 @@ function refreshOccasionVisibility(){
     if(state.step === 3) statusChip.textContent = L.status3 || "Skriv tekst";
   }
 
-  /* =========================================================
-     AFSNIT 08 – Designs
-  ========================================================= */
-  function buildDesignTiles(){
-    if(!designStrip) return;
-    designStrip.innerHTML = "";
+ /* =========================================================
+   AFSNIT 08 – Wizard / setStep (STABIL + opdaterer altid UI)
+========================================================= */
+function setStep(step){
+  state.step = step;
+  saveState();
 
-    (window.CARD_DATA.designs || []).forEach(d => {
-      const tile = document.createElement("button");
-      tile.type = "button";
-      tile.className = "design-tile";
-      tile.dataset.id = d.id;
+  // Aktivér kun det valgte lag
+  stepBlocks.forEach((el) => {
+    const s = parseInt(el.getAttribute("data-step"), 10);
+    el.classList.toggle("active", s === step);
+  });
 
-      tile.style.background = `
-        radial-gradient(220px 140px at 20% 20%, rgba(255,255,255,0.16), transparent 55%),
-        linear-gradient(135deg, ${d.a}, ${d.b})
-      `;
-
-      const name = document.createElement("div");
-      name.className = "name";
-      name.textContent = d.name;
-
-      const icon = document.createElement("div");
-      icon.className = "icon";
-      icon.textContent = d.icon;
-
-      tile.appendChild(name);
-      tile.appendChild(icon);
-
-      tile.addEventListener("click", () => {
-        selectDesign(d.id);
-        setStep(3);
-      });
-
-      designStrip.appendChild(tile);
-    });
-
-    markActiveDesign();
+  // Progressbar + “Vælg lag”-knap
+  if(progressBar){
+    const pct = step === 1 ? 33 : (step === 2 ? 66 : 100);
+    progressBar.style.width = pct + "%";
   }
 
-  function selectDesign(id){
-    state.designId = id;
-    saveState();
-    markActiveDesign();
-    applyDesignToPreview();
-    if(toStep3) toStep3.disabled = false;
-    refreshActionbarEnabled();
-  }
+  // Opdater ALT der kan være afhængigt af sprog/type
+  applyTexts();          // labels/tekster i UI
+  refreshOccasionVisibility();
+  refreshSuggestions();  // <- vigtig: så “Forslag” altid fyldes når du er i tekst
+  refreshPreviewText();  // <- vigtig: så preview altid følger valgt sprog
 
-  function markActiveDesign(){
-    if(designStrip){
-      const tiles = [...designStrip.querySelectorAll(".design-tile")];
-      tiles.forEach(tl => tl.classList.toggle("active", tl.dataset.id === state.designId));
-    }
+  // Tilbage-knap
+  if(btnBack) btnBack.hidden = (step <= 1);
+}
 
-    const L = t();
-    if(!state.designId){
-      if(designChosen) designChosen.textContent = L.chosenNone || "Intet valgt";
-      if(toStep3) toStep3.disabled = true;
-    } else {
-      const d = (window.CARD_DATA.designs || []).find(x=>x.id===state.designId);
-      if(designChosen) designChosen.textContent = d ? d.name : state.designId;
-      if(toStep3) toStep3.disabled = false;
-    }
-  }
-
-  function applyDesignToPreview(){
-    const designs = (window.CARD_DATA.designs || []);
-    const d = designs.find(x=>x.id===state.designId) || designs[0];
-    if(!d) return;
-
-    document.documentElement.style.setProperty("--cardA", d.a);
-    document.documentElement.style.setProperty("--cardB", d.b);
-    document.documentElement.style.setProperty("--cardC", d.c);
-
-    if(previewStamp) previewStamp.textContent = d.icon;
-
-    const inner = cardPreview ? cardPreview.querySelector(".card-inner") : null;
-    if(inner){
-      inner.style.backgroundImage = `linear-gradient(135deg, var(--cardA), var(--cardB))`;
-    }
-  }
 
 /* =========================================================
    AFSNIT 09 – Suggestions + Preview
