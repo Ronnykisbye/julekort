@@ -601,133 +601,134 @@ function refreshPreviewText(){
   }
 
 /* =========================================================
-   AFSNIT 11 – Events / bruger-interaktion (FIX)
+   AFSNIT 11 – Events / bruger-interaktion (STABIL)
 ========================================================= */
+function bindEvents(){
 
-/* ---------- Sprog ---------- */
-langSelect.addEventListener("change", () => {
-  state.lang = langSelect.value;
-  saveState();
+  /* ---------- Sprog ---------- */
+  if(langSelect){
+    langSelect.addEventListener("change", () => {
+      state.lang = langSelect.value;
+      saveState();
+      applyTexts();
+      refreshSuggestions();
+      refreshPreviewText();
+    });
+  }
 
-  applyTexts();          // opdater labels/overskrifter + genbyg korttype-tekster
-  refreshSuggestions();  // opdater forslag + evt. auto-tekst
-});
+  /* ---------- Tema ---------- */
+  if(themeLight){
+    themeLight.addEventListener("click", () => {
+      state.theme = "light";
+      saveState();
+      applyTheme();
+    });
+  }
+  if(themeDark){
+    themeDark.addEventListener("click", () => {
+      state.theme = "dark";
+      saveState();
+      applyTheme();
+    });
+  }
 
-/* ---------- Tema (Light / Dark) ---------- */
-themeLight.addEventListener("click", () => {
-  state.theme = "light";
-  saveState();
-  applyTheme();
-});
+  /* ---------- Korttype ---------- */
+  if(typeSelect){
+    typeSelect.addEventListener("change", () => {
+      state.type = typeSelect.value;
+      saveState();
+      refreshOccasionVisibility(); // skjul/vis anledning korrekt
+      refreshSuggestions();        // opdater forslag (og auto-tekst hvis ikke custom)
+      refreshPreviewText();
+    });
+  }
 
-themeDark.addEventListener("click", () => {
-  state.theme = "dark";
-  saveState();
-  applyTheme();
-});
+  /* ---------- Anledning (kun special) ---------- */
+  if(occasionInput){
+    occasionInput.addEventListener("input", () => {
+      state.occasion = occasionInput.value;
+      saveState();
+      refreshSuggestions();
+      refreshPreviewText();
+    });
+  }
 
-/* ---------- Korttype ---------- */
-typeSelect.addEventListener("change", () => {
-  state.type = typeSelect.value;
-  saveState();
+  /* ---------- Navigation ---------- */
+  if(toStep2) toStep2.addEventListener("click", () => setStep(2));
+  if(toStep3) toStep3.addEventListener("click", () => setStep(3));
 
-  refreshOccasionVisibility();
-  refreshSuggestions();        // opdater tekst hvis ikke custom
-  refreshPreviewText();
-});
+  if(btnBack){
+    btnBack.addEventListener("click", () => {
+      setStep(Math.max(1, state.step - 1));
+    });
+  }
 
-/* ---------- Anledning (kun special) ---------- */
-if (occasionInput) {
-  occasionInput.addEventListener("input", () => {
-    state.occasion = occasionInput.value;
-    saveState();
+  /* ---------- Forslag ---------- */
+  if(suggestSelect){
+    suggestSelect.addEventListener("change", () => {
+      const idx = parseInt(suggestSelect.value, 10);
+      const list = buildSuggestions();
+      const picked = list[idx] || list[0] || "";
+      setMessage(picked, "suggestion");
+    });
+  }
 
-    // påvirker forslag/tekst hvis messageMode != custom
-    refreshSuggestions();
-    refreshPreviewText();
-  });
+  if(btnRandom) btnRandom.addEventListener("click", randomSuggestion);
+
+  /* ---------- Fri tekst ---------- */
+  if(messageInput){
+    messageInput.addEventListener("input", () => {
+      state.message = messageInput.value;
+      state.messageMode = "custom";
+      saveState();
+      refreshPreviewText();
+    });
+  }
+
+  /* ---------- Fra / Til ---------- */
+  if(fromInput){
+    fromInput.addEventListener("input", () => {
+      state.from = fromInput.value;
+      saveState();
+      refreshPreviewText();
+    });
+  }
+
+  if(toInput){
+    toInput.addEventListener("input", () => {
+      state.to = toInput.value;
+      saveState();
+      refreshPreviewText();
+    });
+  }
+
+  /* ---------- Output ---------- */
+  if(btnPng) btnPng.addEventListener("click", downloadPNG);
+  if(btnPdf) btnPdf.addEventListener("click", printAsPDF);
+  if(btnMail) btnMail.addEventListener("click", sendEmail);
+  if(btnShare) btnShare.addEventListener("click", shareCard);
+
+  /* ---------- Reset ---------- */
+  if(btnReset){
+    btnReset.addEventListener("click", () => {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    });
+  }
+
+  /* ---------- Hjælp ---------- */
+  if(btnHelp){
+    btnHelp.addEventListener("click", () => { if(helpModal) helpModal.hidden = false; });
+  }
+  if(btnCloseHelp){
+    btnCloseHelp.addEventListener("click", () => { if(helpModal) helpModal.hidden = true; });
+  }
+  if(helpModal){
+    helpModal.addEventListener("click", (e) => {
+      if(e.target.classList.contains("modal-backdrop")) helpModal.hidden = true;
+    });
+  }
 }
-
-/* ---------- Vælg design (knap Lag1 → Lag2) ---------- */
-if (toStep2) {
-  toStep2.addEventListener("click", () => setStep(2));
-}
-
-/* ---------- Skriv teksten (knap Lag2 → Lag3) ---------- */
-if (toStep3) {
-  toStep3.addEventListener("click", () => setStep(3));
-}
-
-/* VIGTIGT:
-   INGEN ekstra click-handler på designStrip her.
-   Dine design-knapper får allerede deres click i buildDesignTiles()
-   (den kalder selectDesign(id) + setStep(3))
-*/
-
-/* ---------- Forslag (dropdown) ---------- */
-suggestSelect.addEventListener("change", () => {
-  const idx = parseInt(suggestSelect.value, 10);
-  const list = buildSuggestions();
-  const picked = list[idx] || list[0] || "";
-  setMessage(picked, "suggestion");
-});
-
-/* ---------- Ny variant (tilfældigt forslag) ---------- */
-btnRandom.addEventListener("click", () => {
-  randomSuggestion();
-});
-
-/* ---------- Nulstil ---------- */
-btnReset.addEventListener("click", () => {
-  localStorage.removeItem(STORAGE_KEY);
-  location.reload();
-});
-
-/* ---------- Fri tekst (brugeren skriver selv) ---------- */
-messageInput.addEventListener("input", () => {
-  state.message = messageInput.value;
-  state.messageMode = "custom"; // overskrives ikke ved sprogskift
-  saveState();
-  refreshPreviewText();
-});
-
-/* ---------- Fra / Til ---------- */
-fromInput.addEventListener("input", () => {
-  state.from = fromInput.value;
-  saveState();
-  refreshPreviewText();
-});
-
-toInput.addEventListener("input", () => {
-  state.to = toInput.value;
-  saveState();
-  refreshPreviewText();
-});
-
-/* ---------- Navigation (Tilbage) ---------- */
-btnBack.addEventListener("click", () => {
-  setStep(Math.max(1, state.step - 1));
-});
-
-/* ---------- Output ---------- */
-btnPng.addEventListener("click", downloadPNG);
-btnPdf.addEventListener("click", printAsPDF);
-btnMail.addEventListener("click", sendEmail);
-btnShare.addEventListener("click", shareCard);
-
-/* ---------- Hjælp modal ---------- */
-btnHelp.addEventListener("click", () => {
-  helpModal.hidden = false;
-});
-
-btnCloseHelp.addEventListener("click", () => {
-  helpModal.hidden = true;
-});
-
-helpModal.addEventListener("click", (e) => {
-  if(e.target.classList.contains("modal-backdrop")) helpModal.hidden = true;
-});
-
 
   /* =========================================================
      AFSNIT 12 – Restore UI + Boot
