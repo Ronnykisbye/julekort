@@ -330,8 +330,20 @@ function setMessage(txt, mode){
 ========================================================= */
 function currentOccasionToken(){
   const occ = (state.occasion || "").trim();
-  return occ.length ? occ : (state.lang==="da" ? "anledningen" : "occasion");
+  if(occ.length) return occ;
+
+  // Placeholder pr. sprog når feltet er tomt
+  const placeholders = {
+    da: "[ skriv anledning ]",
+    en: "[ write occasion ]",
+    de: "[ Anlass eingeben ]",
+    pl: "[ wpisz okazję ]",
+    lt: "[ įrašyk progą ]"
+  };
+
+  return placeholders[state.lang] || "[ write occasion ]";
 }
+
 
 function buildSuggestions(){
   const pack =
@@ -569,8 +581,8 @@ function refreshPreviewText(){
     }catch(e){}
   }
 
- /* =========================================================
-   AFSNIT 11 – Events / bruger-interaktion
+/* =========================================================
+   AFSNIT 11 – Events / bruger-interaktion (FIX)
 ========================================================= */
 
 /* ---------- Sprog ---------- */
@@ -578,94 +590,87 @@ langSelect.addEventListener("change", () => {
   state.lang = langSelect.value;
   saveState();
 
-  applyTexts();          // labels, overskrifter mm.
-  refreshSuggestions(); // NYT: opdater forslag + tekst hvis ikke custom
+  applyTexts();          // opdater labels/overskrifter + genbyg korttype-tekster
+  refreshSuggestions();  // opdater forslag + evt. auto-tekst
 });
-
 
 /* ---------- Tema (Light / Dark) ---------- */
 themeLight.addEventListener("click", () => {
   state.theme = "light";
-  document.documentElement.setAttribute("data-theme", "light");
-  themeLight.classList.add("active");
-  themeDark.classList.remove("active");
   saveState();
+  applyTheme();
 });
 
 themeDark.addEventListener("click", () => {
   state.theme = "dark";
-  document.documentElement.setAttribute("data-theme", "dark");
-  themeDark.classList.add("active");
-  themeLight.classList.remove("active");
   saveState();
+  applyTheme();
 });
-
 
 /* ---------- Korttype ---------- */
 typeSelect.addEventListener("change", () => {
   state.type = typeSelect.value;
   saveState();
 
-  refreshOccasionVisibility(); // vis/skjul “Anledning”
-  refreshSuggestions();        // NYT: skift forslag hvis ikke custom
+  refreshOccasionVisibility();
+  refreshSuggestions();        // opdater tekst hvis ikke custom
+  refreshPreviewText();
 });
 
-
-/* ---------- Anledning (kun special occasion) ---------- */
+/* ---------- Anledning (kun special) ---------- */
 if (occasionInput) {
   occasionInput.addEventListener("input", () => {
     state.occasion = occasionInput.value;
     saveState();
 
-    // NYT: påvirker teksten, men kun hvis brugeren ikke selv har skrevet
+    // påvirker forslag/tekst hvis messageMode != custom
     refreshSuggestions();
+    refreshPreviewText();
   });
 }
 
+/* ---------- Vælg design (knap Lag1 → Lag2) ---------- */
+if (toStep2) {
+  toStep2.addEventListener("click", () => setStep(2));
+}
 
-/* ---------- Designvalg ---------- */
-designStrip.addEventListener("click", (e) => {
-  const tile = e.target.closest(".design-tile");
-  if (!tile) return;
+/* ---------- Skriv teksten (knap Lag2 → Lag3) ---------- */
+if (toStep3) {
+  toStep3.addEventListener("click", () => setStep(3));
+}
 
-  const id = tile.getAttribute("data-id");
-  state.designId = id;
-  saveState();
-
-  document.querySelectorAll(".design-tile").forEach(t =>
-    t.classList.toggle("active", t === tile)
-  );
-
-  applyDesign(id);
-  goToStep(3); // hop automatisk til tekst
-});
-
+/* VIGTIGT:
+   INGEN ekstra click-handler på designStrip her.
+   Dine design-knapper får allerede deres click i buildDesignTiles()
+   (den kalder selectDesign(id) + setStep(3))
+*/
 
 /* ---------- Forslag (dropdown) ---------- */
 suggestSelect.addEventListener("change", () => {
   const idx = parseInt(suggestSelect.value, 10);
   const list = buildSuggestions();
   const picked = list[idx] || list[0] || "";
-
-  // NYT: forslag tæller som “suggestion”
   setMessage(picked, "suggestion");
 });
 
-
 /* ---------- Ny variant (tilfældigt forslag) ---------- */
 btnRandom.addEventListener("click", () => {
-  randomSuggestion(); // sætter også messageMode = "suggestion"
+  randomSuggestion();
 });
 
+/* ---------- Nulstil ---------- */
+btnReset.addEventListener("click", () => {
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+});
 
 /* ---------- Fri tekst (brugeren skriver selv) ---------- */
 messageInput.addEventListener("input", () => {
   state.message = messageInput.value;
-  state.messageMode = "custom"; // VIGTIGT: må ikke overskrives af sprogskift
+  state.messageMode = "custom"; // overskrives ikke ved sprogskift
   saveState();
   refreshPreviewText();
 });
-
 
 /* ---------- Fra / Til ---------- */
 fromInput.addEventListener("input", () => {
@@ -680,17 +685,28 @@ toInput.addEventListener("input", () => {
   refreshPreviewText();
 });
 
-
-/* ---------- Navigation (lag / wizard) ---------- */
+/* ---------- Navigation (Tilbage) ---------- */
 btnBack.addEventListener("click", () => {
-  goToStep(Math.max(1, state.step - 1));
+  setStep(Math.max(1, state.step - 1));
 });
 
-document.querySelectorAll("[data-step]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const step = parseInt(btn.getAttribute("data-step"), 10);
-    goToStep(step);
-  });
+/* ---------- Output ---------- */
+btnPng.addEventListener("click", downloadPNG);
+btnPdf.addEventListener("click", printAsPDF);
+btnMail.addEventListener("click", sendEmail);
+btnShare.addEventListener("click", shareCard);
+
+/* ---------- Hjælp modal ---------- */
+btnHelp.addEventListener("click", () => {
+  helpModal.hidden = false;
+});
+
+btnCloseHelp.addEventListener("click", () => {
+  helpModal.hidden = true;
+});
+
+helpModal.addEventListener("click", (e) => {
+  if(e.target.classList.contains("modal-backdrop")) helpModal.hidden = true;
 });
 
 
