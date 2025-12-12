@@ -164,47 +164,21 @@
     refreshStatus();
   }
 
-  /* =========================================================
-     AFSNIT 06 – Wizard step + COLLAPSE (NYT)
-  ========================================================= */
-  function setStep(step){
-    state.step = Math.max(1, Math.min(3, step));
-    saveState();
-    refreshProgress();
-    refreshStatus();
-    applyStepCollapse();
+ /* =========================================================
+   AFSNIT 06 – SIMPEL WIZARD (KUN ÉT LAG AD GANGEN)
+========================================================= */
+function setStep(step){
+  state.step = step;
+  saveState();
 
-    const target = document.querySelector(`[data-step="${state.step}"]`);
-    if(target){
-      target.scrollIntoView({ behavior:"smooth", block:"start" });
-    }
-  }
+  stepBlocks.forEach(block => {
+    const s = parseInt(block.dataset.step, 10);
+    block.classList.toggle("active", s === step);
+  });
 
-  function applyStepCollapse(){
-    stepBlocks.forEach(block=>{
-      const s = parseInt(block.dataset.step, 10);
-      const isActive = s === state.step;
-
-      block.classList.toggle("is-active", isActive);
-      block.classList.toggle("is-collapsed", !isActive);
-    });
-  }
-
-  function refreshProgress(){
-    const pct = (state.step - 1) / 2 * 100;
-    progressBar.style.width = `${pct}%`;
-  }
-
-  function refreshStatus(){
-    if(state.step === 1) statusChip.textContent = t().status1;
-    if(state.step === 2) statusChip.textContent = t().status2;
-    if(state.step === 3) statusChip.textContent = t().status3;
-  }
-
-  function refreshOccasionVisibility(){
-    const isSpecial = state.type === "special";
-    occasionWrap.hidden = !isSpecial;
-  }
+  refreshProgress();
+  refreshStatus();
+}
 
   /* =========================================================
      AFSNIT 07 – Designs
