@@ -53,6 +53,7 @@
   const helpList = $("helpList");
 
   const stepBlocks = Array.from(document.querySelectorAll(".card.block"));
+  const btnBack = $("btnBack");
 
   /* =========================================================
      AFSNIT 02 – State + storage
