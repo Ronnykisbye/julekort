@@ -497,3 +497,19 @@ textarea{ resize:none; min-height: 110px; line-height: 1.25; }
   .preview-wrap{ padding:0; }
   .card3d{ transform:none; box-shadow:none; border:none; height: 100vh; }
 }
+
+
+/* =========================================================
+   AFSNIT 99 – SIMPEL WIZARD (KUN ÉT LAG AD GANGEN)
+   Begynder-version – stabil og forståelig
+========================================================= */
+
+/* Alle lag er skjult */
+.card.block {
+  display: none;
+}
+
+/* Kun det aktive lag vises */
+.card.block.active {
+  display: block;
+}
