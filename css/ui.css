@@ -341,7 +341,7 @@ textarea{
 
 
 /* =========================================================
-   AFSNIT 10 – Designs (horisontal strip)
+   AFSNIT 10 – Designs (horisontal strip)  [SMART SCROLL]
 ========================================================= */
 .mini-row{
   display:flex;
@@ -356,34 +356,82 @@ textarea{
   color: var(--muted);
 }
 
+/* Horisontal “carousel” */
 .design-strip{
   display:flex;
-  gap: 10px;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.03);
+
   overflow-x: auto;
-  padding-bottom: 6px;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+
+  /* “fade edges” så det føles som en menu */
+  background-image:
+    linear-gradient(to right, rgba(0,0,0,0.45), transparent 42px),
+    linear-gradient(to left,  rgba(0,0,0,0.45), transparent 42px);
+  background-repeat: no-repeat;
+  background-size: 42px 100%, 42px 100%;
+  background-position: left center, right center;
+  background-attachment: local, local;
+
+  /* cursor hint (brugeren kan “gribe” strippen) */
+  cursor: grab;
+}
+.design-strip:active{ cursor: grabbing; }
+
+/* SMART scrollbar (thumb/pind) */
+.design-strip{
+  scrollbar-color: rgba(255,255,255,0.28) rgba(255,255,255,0.06); /* Firefox */
+  scrollbar-width: thin;
+}
+.design-strip::-webkit-scrollbar{
+  height: 12px;
+}
+.design-strip::-webkit-scrollbar-track{
+  background: rgba(255,255,255,0.06);
+  border-radius: 999px;
+}
+.design-strip::-webkit-scrollbar-thumb{
+  background: linear-gradient(90deg, rgba(139,247,255,0.35), rgba(255,255,255,0.22));
+  border: 2px solid rgba(0,0,0,0.35);
+  border-radius: 999px;
+}
+.design-strip::-webkit-scrollbar-thumb:hover{
+  background: linear-gradient(90deg, rgba(139,247,255,0.48), rgba(255,255,255,0.28));
 }
 
+/* Tiles */
 .design-tile{
-  flex: 0 0 auto;
-  width: 132px;
-  height: 52px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.20);
-  cursor:pointer;
-  color: rgba(255,255,255,0.92);
   position: relative;
-  overflow:hidden;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.20);
+  flex: 0 0 170px;
+  min-height: 64px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+
+  padding: 12px 44px 12px 12px;
+  color: rgba(255,255,255,0.92);
+  user-select: none;
+  scroll-snap-align: start;
+
+  transition: transform 140ms ease, box-shadow 140ms ease, outline 140ms ease;
+}
+
+.design-tile:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.24);
 }
 
 .design-tile .name{
-  position:absolute;
-  left: 10px;
-  top: 10px;
-  font-size: 12px;
   font-weight: 700;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.30);
+  font-size: 13px;
+  letter-spacing: 0.2px;
 }
 
 .design-tile .icon{
@@ -397,7 +445,6 @@ textarea{
   outline: 2px solid rgba(139,247,255,0.65);
   box-shadow: 0 0 0 4px rgba(139,247,255,0.12), 0 18px 40px rgba(0,0,0,0.22);
 }
-
 
 /* =========================================================
    AFSNIT 11 – Preview card (højre)
